@@ -1,7 +1,7 @@
 import { db } from "~/db";
 import * as schema from "~/db/schema";
 import { eq, desc } from "drizzle-orm";
-import type { CornerNode, WallSegment, FloorplanImage } from "~/store/types";
+import type { CornerNode, WallSegment, FloorplanImage, Floor, StaircaseOpening } from "~/store/types";
 
 export interface LoadedPlan {
     id: string;
@@ -10,14 +10,16 @@ export interface LoadedPlan {
     defaultWallHeight: number;
     createdAt: number;
     updatedAt: number;
+    floors: Floor[];
     corners: Record<string, CornerNode>;
     walls: Record<string, WallSegment>;
     floorplan: FloorplanImage | null;
+    staircaseOpenings: Record<string, StaircaseOpening>;
 }
 
 /**
- * Load a full plan by ID from the database, including all corners, walls
- * (with openings and components), and the floorplan image.
+ * Load a full plan by ID from the database, including all floors, corners, walls
+ * (with openings and components), floorplan images, and staircase openings.
  *
  * Returns `null` if the plan does not exist.
  */
@@ -30,6 +32,32 @@ export function loadPlanById(planId: string): LoadedPlan | null {
 
     if (!plan) return null;
 
+    // Load floors
+    const floorRows = db
+        .select()
+        .from(schema.floors)
+        .where(eq(schema.floors.planId, planId))
+        .all();
+
+    const floors: Floor[] = floorRows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        level: row.level,
+        floorHeight: row.floorHeight,
+    }));
+
+    // If no floors exist (legacy plan), create a virtual default
+    let defaultFloorId: string | null = null;
+    if (floors.length === 0) {
+        defaultFloorId = "default-floor";
+        floors.push({
+            id: defaultFloorId,
+            name: "Ground Floor",
+            level: 0,
+            floorHeight: 2.8,
+        });
+    }
+
     // Load corners
     const cornerRows = db
         .select()
@@ -39,7 +67,11 @@ export function loadPlanById(planId: string): LoadedPlan | null {
 
     const corners: Record<string, CornerNode> = {};
     for (const row of cornerRows) {
-        corners[row.id] = { id: row.id, position: { x: row.x, y: row.y } };
+        corners[row.id] = {
+            id: row.id,
+            position: { x: row.x, y: row.y },
+            floorId: row.floorId || defaultFloorId || floors[0].id,
+        };
     }
 
     // Load walls
@@ -85,6 +117,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
 
         walls[row.id] = {
             id: row.id,
+            floorId: row.floorId || defaultFloorId || floors[0].id,
             startId: row.startId,
             endId: row.endId,
             thickness: row.thickness,
@@ -95,15 +128,16 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         };
     }
 
-    // Load floorplan image
+    // Load floorplan image (first one found — currently single image per plan)
     const floorplanRow = db
         .select()
         .from(schema.floorplanImages)
         .where(eq(schema.floorplanImages.planId, planId))
         .get();
 
-    const floorplan = floorplanRow
+    const floorplan: FloorplanImage | null = floorplanRow
         ? {
+              floorId: floorplanRow.floorId || defaultFloorId || floors[0].id,
               url: floorplanRow.imageData,
               name: floorplanRow.name,
               widthMeters: floorplanRow.widthMeters,
@@ -113,6 +147,27 @@ export function loadPlanById(planId: string): LoadedPlan | null {
           }
         : null;
 
+    // Load staircase openings
+    const staircaseOpenings: Record<string, StaircaseOpening> = {};
+    for (const floor of floors) {
+        if (floor.id === defaultFloorId) continue; // virtual floor has no DB rows
+        const staircaseRows = db
+            .select()
+            .from(schema.staircaseOpenings)
+            .where(eq(schema.staircaseOpenings.floorId, floor.id))
+            .all();
+        for (const row of staircaseRows) {
+            staircaseOpenings[row.id] = {
+                id: row.id,
+                floorId: row.floorId,
+                position: { x: row.x, y: row.y },
+                width: row.width,
+                depth: row.depth,
+                rotation: row.rotation,
+            };
+        }
+    }
+
     return {
         id: plan.id,
         name: plan.name,
@@ -120,9 +175,11 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         defaultWallHeight: plan.defaultWallHeight,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,
+        floors,
         corners,
         walls,
         floorplan,
+        staircaseOpenings,
     };
 }
 

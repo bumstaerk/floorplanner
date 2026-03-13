@@ -317,6 +317,8 @@ export function computeWallGeometry(
 
     for (const otherWall of Object.values(walls)) {
         if (otherWall.id === wallId) continue;
+        // Only consider neighbors on the same floor
+        if (otherWall.floorId !== wall.floorId) continue;
         if (
             otherWall.startId !== wall.startId &&
             otherWall.endId !== wall.startId
@@ -343,6 +345,8 @@ export function computeWallGeometry(
 
     for (const otherWall of Object.values(walls)) {
         if (otherWall.id === wallId) continue;
+        // Only consider neighbors on the same floor
+        if (otherWall.floorId !== wall.floorId) continue;
         if (otherWall.startId !== wall.endId && otherWall.endId !== wall.endId)
             continue;
 

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { useFloorplanStore } from "../store/useFloorplanStore";
+import { useShallow } from "zustand/react/shallow";
 import type { BuildTool, EditorMode } from "../store/types";
 
 /**
@@ -39,6 +40,12 @@ export function Toolbar() {
     const currentPlanName = useFloorplanStore((s) => s.currentPlanName);
     const saving = useFloorplanStore((s) => s.saving);
     const loading = useFloorplanStore((s) => s.loading);
+
+    const floors = useFloorplanStore(useShallow((s) => s.floors));
+    const currentFloorId = useFloorplanStore((s) => s.currentFloorId);
+    const addFloor = useFloorplanStore((s) => s.addFloor);
+    const removeFloor = useFloorplanStore((s) => s.removeFloor);
+    const setCurrentFloor = useFloorplanStore((s) => s.setCurrentFloor);
 
     const setMode = useFloorplanStore((s) => s.setMode);
     const setActiveTool = useFloorplanStore((s) => s.setActiveTool);
@@ -165,6 +172,7 @@ export function Toolbar() {
                     aspect >= 1 ? maxMeters / aspect : maxMeters;
 
                 setFloorplan({
+                    floorId: "", // will be set by store to currentFloorId
                     url,
                     name: file.name,
                     widthMeters,
@@ -476,6 +484,26 @@ export function Toolbar() {
                                     />
                                 </svg>
                             </ToolButton>
+                            <ToolButton
+                                active={activeTool === "staircase"}
+                                onClick={() => handleToolChange("staircase")}
+                                title="Place Stairs (T)"
+                                shortcut="T"
+                            >
+                                <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M3 21h4V17h4v-4h4V9h4V5h2"
+                                    />
+                                </svg>
+                            </ToolButton>
                         </div>
 
                         {/* Divider */}
@@ -645,6 +673,58 @@ export function Toolbar() {
                 </div>
             </div>
 
+            {/* Floor selector panel (left side, build mode only) */}
+            {mode === "build" && (
+                <div className="absolute top-16 left-3 z-10 pointer-events-auto">
+                    <div className="bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-700/50 overflow-hidden w-44">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50">
+                            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Floors</span>
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => addFloor()}
+                                    className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all"
+                                    title="Add Floor"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => removeFloor(currentFloorId)}
+                                    disabled={floors.length <= 1}
+                                    className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                    title="Delete Current Floor"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                            {[...floors]
+                                .sort((a, b) => b.level - a.level)
+                                .map((floor) => (
+                                    <button
+                                        key={floor.id}
+                                        onClick={() => setCurrentFloor(floor.id)}
+                                        className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                                            floor.id === currentFloorId
+                                                ? "bg-blue-600/20 text-blue-300 border-l-2 border-blue-500"
+                                                : "text-gray-300 hover:bg-gray-700/40 border-l-2 border-transparent"
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="truncate">{floor.name}</span>
+                                            <span className="text-[10px] text-gray-500 ml-1">L{floor.level}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Status bar */}
             <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2 pointer-events-none">
                 {/* Left: drawing hint */}
@@ -680,6 +760,9 @@ export function Toolbar() {
                             to delete
                         </span>
                     )}
+                    {mode === "build" && activeTool === "staircase" && (
+                        <span>Click to place staircase opening</span>
+                    )}
                     {mode === "build" && activeTool === "pan" && (
                         <span>Drag to pan • Scroll to zoom</span>
                     )}
@@ -692,7 +775,7 @@ export function Toolbar() {
 
                 {/* Right: stats */}
                 <div className="text-xs text-gray-500 bg-gray-900/70 backdrop-blur-sm rounded px-3 py-1.5 shadow">
-                    {cornerCount} corners • {wallCount} walls
+                    {floors.find((f) => f.id === currentFloorId)?.name ?? "Floor"} • {cornerCount} corners • {wallCount} walls
                     {roomCount > 0 && (
                         <span>
                             {" "}

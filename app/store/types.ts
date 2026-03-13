@@ -59,6 +59,8 @@ export interface WallComponent {
  */
 export interface WallSegment {
     id: string;
+    /** The floor this wall belongs to */
+    floorId: string;
     /** ID of the start corner node */
     startId: string;
     /** ID of the end corner node */
@@ -80,6 +82,36 @@ export interface WallSegment {
     components: WallComponent[];
 }
 
+// ─── Floors ───────────────────────────────────────────────────────────────────
+
+/** A floor/level within a plan */
+export interface Floor {
+    id: string;
+    /** User-assigned name (e.g. "Ground Floor", "Floor 1") */
+    name: string;
+    /** Integer level for ordering and 3D stacking (0 = ground, 1 = first floor, -1 = basement) */
+    level: number;
+    /** Floor-to-floor height in meters (used for 3D stacking offset) */
+    floorHeight: number;
+}
+
+// ─── Staircase openings ───────────────────────────────────────────────────────
+
+/** A rectangular staircase opening placed on a floor */
+export interface StaircaseOpening {
+    id: string;
+    /** The floor this staircase belongs to */
+    floorId: string;
+    /** Center position in floorplan coordinates */
+    position: Point2D;
+    /** Width in meters */
+    width: number;
+    /** Depth in meters */
+    depth: number;
+    /** Rotation in radians */
+    rotation: number;
+}
+
 // ─── Rooms ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -88,6 +120,8 @@ export interface WallSegment {
  */
 export interface Room {
     id: string;
+    /** The floor this room belongs to */
+    floorId: string;
     /** User-assigned name for the room (e.g. "Living Room", "Kitchen") */
     name: string;
     /** Ordered list of corner IDs forming the room polygon (closed cycle) */
@@ -106,11 +140,15 @@ export interface Room {
 export interface CornerNode {
     id: string;
     position: Point2D;
+    /** The floor this corner belongs to */
+    floorId: string;
 }
 
 // ─── Floorplan image ───────────────────────────────────────────────────────────
 
 export interface FloorplanImage {
+    /** The floor this image belongs to */
+    floorId: string;
     /** Object URL or data URL of the uploaded image */
     url: string;
     /** Original file name */
@@ -129,7 +167,7 @@ export interface FloorplanImage {
 
 export type EditorMode = "build" | "preview";
 
-export type BuildTool = "select" | "wall" | "pan";
+export type BuildTool = "select" | "wall" | "pan" | "staircase";
 
 /** Snap settings */
 export interface SnapSettings {
@@ -154,6 +192,7 @@ export interface GridSettings {
 export interface HistoryEntry {
     corners: Record<string, CornerNode>;
     walls: Record<string, WallSegment>;
+    staircaseOpenings: Record<string, StaircaseOpening>;
 }
 
 // ─── Store shape ───────────────────────────────────────────────────────────────
@@ -164,6 +203,11 @@ export interface FloorplanState {
     walls: Record<string, WallSegment>;
     rooms: Record<string, Room>;
     floorplan: FloorplanImage | null;
+
+    // ── Floors ──
+    floors: Floor[];
+    currentFloorId: string;
+    staircaseOpenings: Record<string, StaircaseOpening>;
 
     // ── Plan persistence ──
     currentPlanId: string | null;
@@ -177,6 +221,7 @@ export interface FloorplanState {
     selectedWallId: string | null;
     selectedCornerId: string | null;
     selectedRoomId: string | null;
+    selectedStaircaseId: string | null;
     hoveredWallId: string | null;
     hoveredCornerId: string | null;
 
@@ -194,6 +239,18 @@ export interface FloorplanState {
     // ── History ──
     history: HistoryEntry[];
     historyIndex: number;
+
+    // ── Actions: floors ──
+    addFloor: () => string;
+    removeFloor: (floorId: string) => void;
+    updateFloor: (floorId: string, patch: Partial<Pick<Floor, "name" | "floorHeight">>) => void;
+    setCurrentFloor: (floorId: string) => void;
+
+    // ── Actions: staircase openings ──
+    addStaircaseOpening: (position: Point2D) => string;
+    removeStaircaseOpening: (id: string) => void;
+    updateStaircaseOpening: (id: string, patch: Partial<Omit<StaircaseOpening, "id" | "floorId">>) => void;
+    selectStaircaseOpening: (id: string | null) => void;
 
     // ── Actions: mode / tool ──
     setMode: (mode: EditorMode) => void;
@@ -304,9 +361,11 @@ export interface FloorplanState {
         name: string;
         defaultWallThickness: number;
         defaultWallHeight: number;
+        floors: Floor[];
         corners: Record<string, CornerNode>;
         walls: Record<string, WallSegment>;
         floorplan: FloorplanImage | null;
+        staircaseOpenings: Record<string, StaircaseOpening>;
     }) => void;
     /** Reset the editor to a blank state */
     newPlan: () => void;

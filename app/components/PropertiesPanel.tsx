@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFloorplanStore } from "../store/useFloorplanStore";
+import { useShallow } from "zustand/react/shallow";
 import type { WallOpening, FloorplanImage } from "../store/types";
 
 /**
@@ -13,12 +14,14 @@ export function PropertiesPanel() {
     const selectedWallId = useFloorplanStore((s) => s.selectedWallId);
     const selectedCornerId = useFloorplanStore((s) => s.selectedCornerId);
     const selectedRoomId = useFloorplanStore((s) => s.selectedRoomId);
+    const selectedStaircaseId = useFloorplanStore((s) => s.selectedStaircaseId);
     const floorplan = useFloorplanStore((s) => s.floorplan);
 
     const hasSelection =
         selectedWallId !== null ||
         selectedCornerId !== null ||
-        selectedRoomId !== null;
+        selectedRoomId !== null ||
+        selectedStaircaseId !== null;
 
     return (
         <div className="absolute top-16 right-3 z-10 pointer-events-auto w-72">
@@ -31,10 +34,14 @@ export function PropertiesPanel() {
                 {selectedRoomId && !selectedWallId && !selectedCornerId && (
                     <RoomProperties roomId={selectedRoomId} />
                 )}
+                {selectedStaircaseId && !selectedWallId && !selectedCornerId && !selectedRoomId && (
+                    <StaircaseProperties staircaseId={selectedStaircaseId} />
+                )}
                 {floorplan &&
-                    !selectedWallId &&
-                    !selectedCornerId &&
-                    !selectedRoomId && <FloorplanProperties />}
+                    !hasSelection && <FloorplanProperties />}
+
+                {/* Floor Settings */}
+                <FloorProperties />
 
                 {/* Plan Settings — always visible */}
                 <PlanSettings />
@@ -881,6 +888,164 @@ function ConnectedWallRow({ wallId }: { wallId: string }) {
             <span className="text-xs text-gray-300">Wall</span>
             <span className="text-xs text-gray-400">{length.toFixed(2)}m</span>
         </button>
+    );
+}
+
+// ─── Floor Properties ─────────────────────────────────────────────────────────
+
+function FloorProperties() {
+    const floors = useFloorplanStore(useShallow((s) => s.floors));
+    const currentFloorId = useFloorplanStore((s) => s.currentFloorId);
+    const updateFloor = useFloorplanStore((s) => s.updateFloor);
+
+    const currentFloor = floors.find((f) => f.id === currentFloorId);
+    if (!currentFloor) return null;
+
+    return (
+        <div className="border-b border-gray-700/50">
+            <div className="px-4 py-3 border-b border-gray-700/30">
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Floor Settings
+                </h3>
+            </div>
+            <div className="px-4 py-3 space-y-3">
+                <div>
+                    <label className="text-xs text-gray-400 block mb-1">Name</label>
+                    <input
+                        type="text"
+                        value={currentFloor.name}
+                        onChange={(e) => updateFloor(currentFloorId, { name: e.target.value })}
+                        className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                    />
+                </div>
+                <div>
+                    <label className="text-xs text-gray-400 block mb-1">
+                        Floor-to-Floor Height (m)
+                    </label>
+                    <input
+                        type="number"
+                        step={0.1}
+                        min={1}
+                        max={10}
+                        value={currentFloor.floorHeight}
+                        onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            if (!isNaN(v) && v > 0) updateFloor(currentFloorId, { floorHeight: v });
+                        }}
+                        className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                    />
+                </div>
+                <div className="text-xs text-gray-500">
+                    Level: {currentFloor.level}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Staircase Properties ────────────────────────────────────────────────────
+
+function StaircaseProperties({ staircaseId }: { staircaseId: string }) {
+    const staircase = useFloorplanStore((s) => s.staircaseOpenings[staircaseId]);
+    const updateStaircaseOpening = useFloorplanStore((s) => s.updateStaircaseOpening);
+    const removeStaircaseOpening = useFloorplanStore((s) => s.removeStaircaseOpening);
+
+    if (!staircase) return null;
+
+    return (
+        <div className="border-b border-gray-700/50">
+            <div className="px-4 py-3 border-b border-gray-700/30">
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Staircase Opening
+                </h3>
+            </div>
+            <div className="px-4 py-3 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-xs text-gray-400 block mb-1">Width (m)</label>
+                        <input
+                            type="number"
+                            step={0.1}
+                            min={0.5}
+                            value={staircase.width}
+                            onChange={(e) => {
+                                const v = parseFloat(e.target.value);
+                                if (!isNaN(v) && v > 0) updateStaircaseOpening(staircaseId, { width: v });
+                            }}
+                            className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                                focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-400 block mb-1">Depth (m)</label>
+                        <input
+                            type="number"
+                            step={0.1}
+                            min={0.5}
+                            value={staircase.depth}
+                            onChange={(e) => {
+                                const v = parseFloat(e.target.value);
+                                if (!isNaN(v) && v > 0) updateStaircaseOpening(staircaseId, { depth: v });
+                            }}
+                            className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                                focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                        />
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="text-xs text-gray-400 block mb-1">X (m)</label>
+                        <input
+                            type="number"
+                            step={0.1}
+                            value={staircase.position.x}
+                            onChange={(e) => {
+                                const v = parseFloat(e.target.value);
+                                if (!isNaN(v)) updateStaircaseOpening(staircaseId, { position: { ...staircase.position, x: v } });
+                            }}
+                            className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                                focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-400 block mb-1">Y (m)</label>
+                        <input
+                            type="number"
+                            step={0.1}
+                            value={staircase.position.y}
+                            onChange={(e) => {
+                                const v = parseFloat(e.target.value);
+                                if (!isNaN(v)) updateStaircaseOpening(staircaseId, { position: { ...staircase.position, y: v } });
+                            }}
+                            className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                                focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="text-xs text-gray-400 block mb-1">Rotation (deg)</label>
+                    <input
+                        type="number"
+                        step={15}
+                        value={Math.round((staircase.rotation * 180) / Math.PI)}
+                        onChange={(e) => {
+                            const deg = parseFloat(e.target.value);
+                            if (!isNaN(deg)) updateStaircaseOpening(staircaseId, { rotation: (deg * Math.PI) / 180 });
+                        }}
+                        className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-2.5 py-1.5 text-sm
+                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                    />
+                </div>
+                <button
+                    onClick={() => removeStaircaseOpening(staircaseId)}
+                    className="w-full mt-1 px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/30 rounded-md transition-all"
+                >
+                    Delete Staircase
+                </button>
+            </div>
+        </div>
     );
 }
 

@@ -13,9 +13,11 @@ export async function action({ request }: Route.ActionArgs) {
         const body = await request.json();
         const {
             name,
+            floors,
             corners,
             walls,
             floorplan,
+            staircaseOpenings,
             defaultWallThickness,
             defaultWallHeight,
         } = body;
@@ -29,7 +31,7 @@ export async function action({ request }: Route.ActionArgs) {
             .where(eq(schema.plans.id, planId))
             .get();
         if (existing) {
-            // Cascade delete handles corners, walls, openings, components, floorplan_images
+            // Cascade delete handles corners, walls, openings, components, floorplan_images, floors, staircases
             db.delete(schema.plans).where(eq(schema.plans.id, planId)).run();
         }
 
@@ -45,9 +47,45 @@ export async function action({ request }: Route.ActionArgs) {
             })
             .run();
 
+        // Insert floors
+        const floorEntries = (floors || []) as Array<{
+            id: string;
+            name: string;
+            level: number;
+            floorHeight: number;
+        }>;
+
+        // If no floors provided, create a default one
+        let defaultFloorId: string | null = null;
+        if (floorEntries.length === 0) {
+            defaultFloorId = uuid();
+            db.insert(schema.floors)
+                .values({
+                    id: defaultFloorId,
+                    planId,
+                    name: "Ground Floor",
+                    level: 0,
+                    floorHeight: 2.8,
+                })
+                .run();
+        } else {
+            for (const floor of floorEntries) {
+                db.insert(schema.floors)
+                    .values({
+                        id: floor.id,
+                        planId,
+                        name: floor.name,
+                        level: floor.level,
+                        floorHeight: floor.floorHeight,
+                    })
+                    .run();
+            }
+        }
+
         // Insert corners
         const cornerEntries = Object.values(corners || {}) as Array<{
             id: string;
+            floorId: string;
             position: { x: number; y: number };
         }>;
         for (const corner of cornerEntries) {
@@ -55,15 +93,17 @@ export async function action({ request }: Route.ActionArgs) {
                 .values({
                     id: corner.id,
                     planId,
+                    floorId: corner.floorId || defaultFloorId || floorEntries[0]?.id,
                     x: corner.position.x,
                     y: corner.position.y,
                 })
                 .run();
         }
 
-        // Insert walls (without openings/components first)
+        // Insert walls
         const wallEntries = Object.values(walls || {}) as Array<{
             id: string;
+            floorId: string;
             startId: string;
             endId: string;
             thickness: number | null;
@@ -94,6 +134,7 @@ export async function action({ request }: Route.ActionArgs) {
                 .values({
                     id: wall.id,
                     planId,
+                    floorId: wall.floorId || defaultFloorId || floorEntries[0]?.id,
                     startId: wall.startId,
                     endId: wall.endId,
                     thickness: wall.thickness ?? null,
@@ -143,12 +184,36 @@ export async function action({ request }: Route.ActionArgs) {
                 .values({
                     id: uuid(),
                     planId,
+                    floorId: floorplan.floorId || defaultFloorId || floorEntries[0]?.id,
                     name: floorplan.name,
                     imageData: floorplan.url, // expects a data URL (base64)
                     widthMeters: floorplan.widthMeters,
                     heightMeters: floorplan.heightMeters,
                     scale: floorplan.scale ?? 1,
                     opacity: floorplan.opacity ?? 0.5,
+                })
+                .run();
+        }
+
+        // Insert staircase openings
+        const staircaseEntries = Object.values(staircaseOpenings || {}) as Array<{
+            id: string;
+            floorId: string;
+            position: { x: number; y: number };
+            width: number;
+            depth: number;
+            rotation: number;
+        }>;
+        for (const staircase of staircaseEntries) {
+            db.insert(schema.staircaseOpenings)
+                .values({
+                    id: staircase.id,
+                    floorId: staircase.floorId,
+                    x: staircase.position.x,
+                    y: staircase.position.y,
+                    width: staircase.width,
+                    depth: staircase.depth,
+                    rotation: staircase.rotation,
                 })
                 .run();
         }

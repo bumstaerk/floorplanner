@@ -9,6 +9,7 @@ import { Wall2D } from "./Wall2D";
 import { Corner2D } from "./Corner2D";
 import { Room2D } from "./Room2D";
 import { DrawingLine } from "./DrawingLine";
+import { Staircase2D } from "./Staircase2D";
 import type { Point2D } from "../store/types";
 
 /**
@@ -48,6 +49,7 @@ function GroundPlane() {
     const findWallAtPoint = useFloorplanStore((s) => s.findWallAtPoint);
     const splitWall = useFloorplanStore((s) => s.splitWall);
     const getWallsAtCorner = useFloorplanStore((s) => s.getWallsAtCorner);
+    const addStaircaseOpening = useFloorplanStore((s) => s.addStaircaseOpening);
 
     /**
      * Given a 3D intersection point on the ground plane, return a snapped 2D point.
@@ -157,6 +159,15 @@ function GroundPlane() {
                 return;
             }
 
+            if (activeTool === "staircase") {
+                e.stopPropagation();
+                const raw: Point2D = { x: e.point.x, y: e.point.z };
+                const snapped = snapToGrid(raw);
+                pushHistory();
+                addStaircaseOpening(snapped);
+                return;
+            }
+
             if (activeTool !== "wall") return;
 
             e.stopPropagation();
@@ -235,6 +246,7 @@ function GroundPlane() {
             splitWall,
             getWallsAtCorner,
             snapToGrid,
+            addStaircaseOpening,
         ],
     );
 
@@ -310,7 +322,7 @@ function BuildKeyboardHandler() {
                 return;
             }
 
-            // Delete / Backspace: remove selected wall or corner
+            // Delete / Backspace: remove selected wall, corner, or staircase
             if (e.key === "Delete" || e.key === "Backspace") {
                 if (state.selectedWallId) {
                     state.pushHistory();
@@ -318,6 +330,9 @@ function BuildKeyboardHandler() {
                 } else if (state.selectedCornerId) {
                     state.pushHistory();
                     state.removeCorner(state.selectedCornerId);
+                } else if (state.selectedStaircaseId) {
+                    state.pushHistory();
+                    state.removeStaircaseOpening(state.selectedStaircaseId);
                 }
                 return;
             }
@@ -375,11 +390,35 @@ function BuildKeyboardHandler() {
 }
 
 export function BuildScene() {
-    const wallIds = useFloorplanStore(useShallow((s) => Object.keys(s.walls)));
-    const cornerIds = useFloorplanStore(
-        useShallow((s) => Object.keys(s.corners)),
+    const currentFloorId = useFloorplanStore((s) => s.currentFloorId);
+    const wallIds = useFloorplanStore(
+        useShallow((s) =>
+            Object.keys(s.walls).filter(
+                (id) => s.walls[id].floorId === s.currentFloorId,
+            ),
+        ),
     );
-    const roomIds = useFloorplanStore(useShallow((s) => Object.keys(s.rooms)));
+    const cornerIds = useFloorplanStore(
+        useShallow((s) =>
+            Object.keys(s.corners).filter(
+                (id) => s.corners[id].floorId === s.currentFloorId,
+            ),
+        ),
+    );
+    const roomIds = useFloorplanStore(
+        useShallow((s) =>
+            Object.keys(s.rooms).filter(
+                (id) => s.rooms[id].floorId === s.currentFloorId,
+            ),
+        ),
+    );
+    const staircaseIds = useFloorplanStore(
+        useShallow((s) =>
+            Object.keys(s.staircaseOpenings).filter(
+                (id) => s.staircaseOpenings[id].floorId === s.currentFloorId,
+            ),
+        ),
+    );
     const activeTool = useFloorplanStore((s) => s.activeTool);
 
     return (
@@ -437,6 +476,11 @@ export function BuildScene() {
             {/* Rendered corners (circles at junctions) */}
             {cornerIds.map((id) => (
                 <Corner2D key={id} cornerId={id} />
+            ))}
+
+            {/* Staircase openings */}
+            {staircaseIds.map((id) => (
+                <Staircase2D key={id} staircaseId={id} />
             ))}
 
             {/* In-progress drawing line */}

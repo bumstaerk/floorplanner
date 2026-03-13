@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
     OrbitControls,
     PerspectiveCamera,
@@ -9,6 +10,7 @@ import { useFloorplanStore } from "../store/useFloorplanStore";
 import { FloorplanPlane } from "./FloorplanPlane";
 import { Wall3D } from "./Wall3D";
 import { Room3D } from "./Room3D";
+import type { Floor } from "../store/types";
 
 /**
  * A simple ground plane for the 3D preview so walls don't float in a void.
@@ -48,64 +50,139 @@ function PreviewGrid() {
 }
 
 /**
+ * A thin horizontal slab between floors.
+ */
+function FloorPlate3D({
+    yOffset,
+    width,
+    depth,
+    centerX,
+    centerZ,
+}: {
+    yOffset: number;
+    width: number;
+    depth: number;
+    centerX: number;
+    centerZ: number;
+}) {
+    return (
+        <mesh
+            position={[centerX, yOffset, centerZ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+            castShadow
+        >
+            <planeGeometry args={[width + 0.4, depth + 0.4]} />
+            <meshStandardMaterial
+                color="#475569"
+                roughness={0.9}
+                metalness={0.05}
+                side={THREE.DoubleSide}
+            />
+        </mesh>
+    );
+}
+
+/**
+ * Compute the Y-offset for each floor based on cumulative floor heights.
+ * Floors are sorted by level (ascending). Ground floor starts at Y=0.
+ */
+function computeFloorOffsets(floors: Floor[]): Map<string, number> {
+    const sorted = [...floors].sort((a, b) => a.level - b.level);
+    const offsets = new Map<string, number>();
+    let y = 0;
+    for (let i = 0; i < sorted.length; i++) {
+        offsets.set(sorted[i].id, y);
+        y += sorted[i].floorHeight;
+    }
+    return offsets;
+}
+
+/**
  * The 3D preview scene.
  *
- * Uses a perspective camera with OrbitControls so the user can freely rotate,
- * zoom, and pan to inspect the house from any angle.
- *
- * The walls drawn in build mode are extruded into 3D box meshes with proper
- * height and thickness. The floorplan image is still visible on the ground.
- *
- * Coordinate mapping:
- *   Floorplan 2D (x, y) → Three.js world (x, 0, z)
- *   Wall height extends along the Y axis from 0 to wall.height.
+ * Renders all floors stacked vertically. Each floor's walls and rooms are
+ * wrapped in a group with a Y-offset. Floor plates render between floors.
  */
 export function PreviewScene() {
-    const wallIds = useFloorplanStore(useShallow((s) => Object.keys(s.walls)));
-    const roomIds = useFloorplanStore(useShallow((s) => Object.keys(s.rooms)));
-
+    const floors = useFloorplanStore(useShallow((s) => s.floors));
+    const walls = useFloorplanStore(useShallow((s) => s.walls));
+    const rooms = useFloorplanStore(useShallow((s) => s.rooms));
     const corners = useFloorplanStore(useShallow((s) => s.corners));
 
-    // Compute a rough center point from all corners so the camera orbits around the model
-    const cornerList = Object.values(corners);
-    let centerX = 0;
-    let centerZ = 0;
-    if (cornerList.length > 0) {
-        let minX = Infinity;
-        let maxX = -Infinity;
-        let minZ = Infinity;
-        let maxZ = -Infinity;
-        for (const c of cornerList) {
-            minX = Math.min(minX, c.position.x);
-            maxX = Math.max(maxX, c.position.x);
-            minZ = Math.min(minZ, c.position.y);
-            maxZ = Math.max(maxZ, c.position.y);
-        }
-        centerX = (minX + maxX) / 2;
-        centerZ = (minZ + maxZ) / 2;
-    }
+    // Compute floor Y-offsets
+    const floorOffsets = useMemo(() => computeFloorOffsets(floors), [floors]);
 
-    // Estimate a good camera distance based on the model extent
-    let extent = 10;
-    if (cornerList.length >= 2) {
-        let maxDist = 0;
-        for (const c of cornerList) {
-            const dx = c.position.x - centerX;
-            const dz = c.position.y - centerZ;
-            const dist = Math.sqrt(dx * dx + dz * dz);
-            if (dist > maxDist) maxDist = dist;
+    // Group wall IDs and room IDs by floor
+    const wallsByFloor = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        for (const f of floors) map[f.id] = [];
+        for (const [id, w] of Object.entries(walls)) {
+            if (map[w.floorId]) map[w.floorId].push(id);
         }
-        extent = Math.max(5, maxDist * 2.5);
-    }
+        return map;
+    }, [walls, floors]);
+
+    const roomsByFloor = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        for (const f of floors) map[f.id] = [];
+        for (const [id, r] of Object.entries(rooms)) {
+            if (map[r.floorId]) map[r.floorId].push(id);
+        }
+        return map;
+    }, [rooms, floors]);
+
+    // Compute bounding box across all corners for centering and camera
+    const { centerX, centerZ, extent, totalHeight, bbWidth, bbDepth } = useMemo(() => {
+        const cornerList = Object.values(corners);
+        let cx = 0, cz = 0, ext = 10, bw = 10, bd = 10;
+
+        if (cornerList.length > 0) {
+            let minX = Infinity, maxX = -Infinity;
+            let minZ = Infinity, maxZ = -Infinity;
+            for (const c of cornerList) {
+                minX = Math.min(minX, c.position.x);
+                maxX = Math.max(maxX, c.position.x);
+                minZ = Math.min(minZ, c.position.y);
+                maxZ = Math.max(maxZ, c.position.y);
+            }
+            cx = (minX + maxX) / 2;
+            cz = (minZ + maxZ) / 2;
+            bw = maxX - minX;
+            bd = maxZ - minZ;
+
+            if (cornerList.length >= 2) {
+                let maxDist = 0;
+                for (const c of cornerList) {
+                    const dx = c.position.x - cx;
+                    const dz = c.position.y - cz;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+                    if (dist > maxDist) maxDist = dist;
+                }
+                ext = Math.max(5, maxDist * 2.5);
+            }
+        }
+
+        // Total building height
+        let th = 0;
+        for (const f of floors) th += f.floorHeight;
+
+        return { centerX: cx, centerZ: cz, extent: Math.max(ext, th * 1.5), totalHeight: th, bbWidth: bw, bbDepth: bd };
+    }, [corners, floors]);
+
+    const sortedFloors = useMemo(
+        () => [...floors].sort((a, b) => a.level - b.level),
+        [floors],
+    );
 
     return (
         <>
-            {/* Perspective camera positioned at an angle above and to the side */}
+            {/* Perspective camera positioned to encompass all floors */}
             <PerspectiveCamera
                 makeDefault
                 position={[
                     centerX + extent * 0.6,
-                    extent * 0.5,
+                    totalHeight * 0.5 + extent * 0.4,
                     centerZ + extent * 0.6,
                 ]}
                 fov={50}
@@ -115,19 +192,19 @@ export function PreviewScene() {
 
             {/* Full orbit controls for 3D inspection */}
             <OrbitControls
-                target={[centerX, 1, centerZ]}
+                target={[centerX, totalHeight / 2, centerZ]}
                 enableDamping
                 dampingFactor={0.12}
                 minDistance={1}
                 maxDistance={200}
-                maxPolarAngle={Math.PI / 2 - 0.05} // Don't let camera go below ground
+                maxPolarAngle={Math.PI / 2 - 0.05}
                 minPolarAngle={0.1}
             />
 
             {/* Lighting setup */}
             <ambientLight intensity={0.4} />
             <directionalLight
-                position={[centerX + 15, 20, centerZ + 10]}
+                position={[centerX + 15, totalHeight + 20, centerZ + 10]}
                 intensity={1.2}
                 castShadow
                 shadow-mapSize-width={2048}
@@ -140,7 +217,7 @@ export function PreviewScene() {
                 shadow-camera-far={100}
             />
             <directionalLight
-                position={[centerX - 10, 15, centerZ - 15]}
+                position={[centerX - 10, totalHeight + 15, centerZ - 15]}
                 intensity={0.4}
             />
             <hemisphereLight args={["#b1e1ff", "#b97a20", 0.3]} />
@@ -161,15 +238,37 @@ export function PreviewScene() {
             {/* Floorplan image on the ground */}
             <FloorplanPlane />
 
-            {/* Detected rooms (floor labels) */}
-            {roomIds.map((id) => (
-                <Room3D key={id} roomId={id} />
-            ))}
+            {/* Render each floor with Y-offset */}
+            {sortedFloors.map((floor, i) => {
+                const yOffset = floorOffsets.get(floor.id) ?? 0;
+                const floorWallIds = wallsByFloor[floor.id] ?? [];
+                const floorRoomIds = roomsByFloor[floor.id] ?? [];
 
-            {/* 3D extruded walls */}
-            {wallIds.map((id) => (
-                <Wall3D key={id} wallId={id} />
-            ))}
+                return (
+                    <group key={floor.id} position={[0, yOffset, 0]}>
+                        {/* Floor plate (not for ground floor) */}
+                        {i > 0 && (
+                            <FloorPlate3D
+                                yOffset={0}
+                                width={bbWidth}
+                                depth={bbDepth}
+                                centerX={centerX}
+                                centerZ={centerZ}
+                            />
+                        )}
+
+                        {/* Room labels */}
+                        {floorRoomIds.map((id) => (
+                            <Room3D key={id} roomId={id} />
+                        ))}
+
+                        {/* Walls */}
+                        {floorWallIds.map((id) => (
+                            <Wall3D key={id} wallId={id} />
+                        ))}
+                    </group>
+                );
+            })}
 
             {/* Sky-like environment for realistic reflections */}
             <fog attach="fog" args={["#0f172a", 50, 200]} />

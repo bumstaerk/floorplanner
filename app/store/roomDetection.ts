@@ -99,11 +99,28 @@ function findWallBetween(
  * set of corner IDs — if a cycle has the same corners as before, the old
  * name is kept.
  */
-export function detectRooms(
-    corners: Record<string, CornerNode>,
-    walls: Record<string, WallSegment>,
+/**
+ * Detect rooms on a single floor by filtering corners/walls to only those on the floor.
+ */
+function detectRoomsForFloor(
+    floorId: string,
+    allCorners: Record<string, CornerNode>,
+    allWalls: Record<string, WallSegment>,
     existingRooms: Record<string, Room>,
 ): Record<string, Room> {
+    const corners: Record<string, CornerNode> = {};
+    for (const [id, c] of Object.entries(allCorners)) {
+        if (c.floorId === floorId) corners[id] = c;
+    }
+    const walls: Record<string, WallSegment> = {};
+    for (const [id, w] of Object.entries(allWalls)) {
+        if (w.floorId === floorId) walls[id] = w;
+    }
+    const floorExisting: Record<string, Room> = {};
+    for (const [id, r] of Object.entries(existingRooms)) {
+        if (r.floorId === floorId) floorExisting[id] = r;
+    }
+
     const cornerIds = Object.keys(corners);
     const wallList = Object.values(walls);
 
@@ -281,7 +298,7 @@ export function detectRooms(
 
     // Build a lookup from sorted corner-id sets to existing room names
     const existingRoomsByKey: Record<string, Room> = {};
-    for (const room of Object.values(existingRooms)) {
+    for (const room of Object.values(floorExisting)) {
         const key = [...room.cornerIds].sort().join(",");
         existingRoomsByKey[key] = room;
     }
@@ -322,6 +339,7 @@ export function detectRooms(
 
         rooms[roomId] = {
             id: roomId,
+            floorId,
             name: roomName,
             cornerIds: cycle,
             wallIds,
@@ -331,4 +349,31 @@ export function detectRooms(
     }
 
     return rooms;
+}
+
+/**
+ * Detect all rooms (minimal closed cycles) in the wall graph.
+ *
+ * Preserves names from previously detected rooms by matching on the sorted
+ * set of corner IDs — if a cycle has the same corners as before, the old
+ * name is kept.
+ *
+ * Runs detection per-floor so walls on different floors don't interfere.
+ */
+export function detectRooms(
+    corners: Record<string, CornerNode>,
+    walls: Record<string, WallSegment>,
+    existingRooms: Record<string, Room>,
+): Record<string, Room> {
+    // Collect all unique floor IDs from corners and walls
+    const floorIds = new Set<string>();
+    for (const c of Object.values(corners)) floorIds.add(c.floorId);
+    for (const w of Object.values(walls)) floorIds.add(w.floorId);
+
+    const allRooms: Record<string, Room> = {};
+    for (const floorId of floorIds) {
+        const floorRooms = detectRoomsForFloor(floorId, corners, walls, existingRooms);
+        Object.assign(allRooms, floorRooms);
+    }
+    return allRooms;
 }

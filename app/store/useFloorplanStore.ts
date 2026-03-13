@@ -7,6 +7,8 @@ import type {
     WallOpening,
     WallComponent,
     FloorplanImage,
+    StaircaseOpening,
+    Floor,
     Point2D,
     HistoryEntry,
 } from "./types";
@@ -14,14 +16,26 @@ import { detectRooms } from "./roomDetection";
 
 const DEFAULT_WALL_THICKNESS = 0.4; // meters
 const DEFAULT_WALL_HEIGHT = 2.2; // meters
+const DEFAULT_FLOOR_HEIGHT = 2.8; // meters
+
+function createDefaultFloor(): Floor {
+    return {
+        id: uuid(),
+        name: "Ground Floor",
+        level: 0,
+        floorHeight: DEFAULT_FLOOR_HEIGHT,
+    };
+}
 
 function makeHistoryEntry(
     corners: Record<string, CornerNode>,
     walls: Record<string, WallSegment>,
+    staircaseOpenings: Record<string, StaircaseOpening>,
 ): HistoryEntry {
     return {
         corners: JSON.parse(JSON.stringify(corners)),
         walls: JSON.parse(JSON.stringify(walls)),
+        staircaseOpenings: JSON.parse(JSON.stringify(staircaseOpenings)),
     };
 }
 
@@ -31,12 +45,19 @@ function distance(a: Point2D, b: Point2D): number {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+const initialFloor = createDefaultFloor();
+
 export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     // ── Data ──────────────────────────────────────────────────────────────────
     corners: {},
     walls: {},
     rooms: {},
     floorplan: null,
+
+    // ── Floors ────────────────────────────────────────────────────────────────
+    floors: [initialFloor],
+    currentFloorId: initialFloor.id,
+    staircaseOpenings: {},
 
     // ── Plan persistence ──────────────────────────────────────────────────────
     currentPlanId: null,
@@ -50,6 +71,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     selectedWallId: null,
     selectedCornerId: null,
     selectedRoomId: null,
+    selectedStaircaseId: null,
     hoveredWallId: null,
     hoveredCornerId: null,
     drawingFromCornerId: null,
@@ -74,6 +96,148 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     history: [],
     historyIndex: -1,
 
+    // ── Actions: floors ─────────────────────────────────────────────────────────
+    addFloor: () => {
+        const id = uuid();
+        set((s) => {
+            const maxLevel = Math.max(...s.floors.map((f) => f.level), -1);
+            const newFloor: Floor = {
+                id,
+                name: `Floor ${maxLevel + 1}`,
+                level: maxLevel + 1,
+                floorHeight: DEFAULT_FLOOR_HEIGHT,
+            };
+            return {
+                floors: [...s.floors, newFloor],
+                currentFloorId: id,
+                // Clear selections and drawing when switching floor
+                selectedWallId: null,
+                selectedCornerId: null,
+                selectedRoomId: null,
+                selectedStaircaseId: null,
+                drawingFromCornerId: null,
+                drawingCursor: null,
+            };
+        });
+        return id;
+    },
+
+    removeFloor: (floorId) =>
+        set((s) => {
+            if (s.floors.length <= 1) return s;
+
+            const remaining = s.floors.filter((f) => f.id !== floorId);
+            // Remove all geometry on this floor
+            const corners: Record<string, CornerNode> = {};
+            for (const [cid, c] of Object.entries(s.corners)) {
+                if (c.floorId !== floorId) corners[cid] = c;
+            }
+            const walls: Record<string, WallSegment> = {};
+            for (const [wid, w] of Object.entries(s.walls)) {
+                if (w.floorId !== floorId) walls[wid] = w;
+            }
+            const rooms: typeof s.rooms = {};
+            for (const [rid, r] of Object.entries(s.rooms)) {
+                if (r.floorId !== floorId) rooms[rid] = r;
+            }
+            const staircaseOpenings: Record<string, StaircaseOpening> = {};
+            for (const [sid, so] of Object.entries(s.staircaseOpenings)) {
+                if (so.floorId !== floorId) staircaseOpenings[sid] = so;
+            }
+            // Remove floorplan image if it belongs to this floor
+            const floorplan = s.floorplan?.floorId === floorId ? null : s.floorplan;
+
+            // Switch to nearest floor
+            let newCurrentFloorId = s.currentFloorId;
+            if (s.currentFloorId === floorId) {
+                const sorted = [...remaining].sort((a, b) => a.level - b.level);
+                newCurrentFloorId = sorted[0].id;
+            }
+
+            return {
+                floors: remaining,
+                currentFloorId: newCurrentFloorId,
+                corners,
+                walls,
+                rooms,
+                staircaseOpenings,
+                floorplan,
+                selectedWallId: null,
+                selectedCornerId: null,
+                selectedRoomId: null,
+                selectedStaircaseId: null,
+                drawingFromCornerId: null,
+                drawingCursor: null,
+            };
+        }),
+
+    updateFloor: (floorId, patch) =>
+        set((s) => ({
+            floors: s.floors.map((f) =>
+                f.id === floorId ? { ...f, ...patch } : f,
+            ),
+        })),
+
+    setCurrentFloor: (floorId) =>
+        set(() => ({
+            currentFloorId: floorId,
+            selectedWallId: null,
+            selectedCornerId: null,
+            selectedRoomId: null,
+            selectedStaircaseId: null,
+            drawingFromCornerId: null,
+            drawingCursor: null,
+        })),
+
+    // ── Actions: staircase openings ──────────────────────────────────────────
+    addStaircaseOpening: (position) => {
+        const id = uuid();
+        set((s) => ({
+            staircaseOpenings: {
+                ...s.staircaseOpenings,
+                [id]: {
+                    id,
+                    floorId: s.currentFloorId,
+                    position: { ...position },
+                    width: 1.0,
+                    depth: 2.5,
+                    rotation: 0,
+                },
+            },
+        }));
+        return id;
+    },
+
+    removeStaircaseOpening: (id) =>
+        set((s) => {
+            const { [id]: _, ...remaining } = s.staircaseOpenings;
+            return {
+                staircaseOpenings: remaining,
+                selectedStaircaseId:
+                    s.selectedStaircaseId === id ? null : s.selectedStaircaseId,
+            };
+        }),
+
+    updateStaircaseOpening: (id, patch) =>
+        set((s) => {
+            const existing = s.staircaseOpenings[id];
+            if (!existing) return s;
+            return {
+                staircaseOpenings: {
+                    ...s.staircaseOpenings,
+                    [id]: { ...existing, ...patch },
+                },
+            };
+        }),
+
+    selectStaircaseOpening: (id) =>
+        set(() => ({
+            selectedStaircaseId: id,
+            selectedWallId: null,
+            selectedCornerId: null,
+            selectedRoomId: null,
+        })),
+
     // ── Actions: rooms ────────────────────────────────────────────────────────
     detectRooms: () =>
         set((s) => ({
@@ -97,6 +261,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             selectedRoomId: id,
             selectedWallId: null,
             selectedCornerId: null,
+            selectedStaircaseId: null,
         }),
 
     // ── Actions: mode / tool ──────────────────────────────────────────────────
@@ -124,7 +289,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         })),
 
     // ── Actions: floorplan image ──────────────────────────────────────────────
-    setFloorplan: (image: FloorplanImage) => set(() => ({ floorplan: image })),
+    setFloorplan: (image: FloorplanImage) => set((s) => ({ floorplan: { ...image, floorId: s.currentFloorId } })),
 
     updateFloorplan: (patch) =>
         set((s) => {
@@ -146,7 +311,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         set((s) => ({
             corners: {
                 ...s.corners,
-                [id]: { id, position: { ...position } },
+                [id]: { id, position: { ...position }, floorId: s.currentFloorId },
             },
         }));
         return id;
@@ -182,11 +347,12 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         const state = get();
         // Don't allow a wall from a corner to itself
         if (startId === endId) return "";
-        // Don't allow duplicate walls between the same two corners
+        // Don't allow duplicate walls between the same two corners on the same floor
         const existing = Object.values(state.walls).find(
             (w) =>
-                (w.startId === startId && w.endId === endId) ||
-                (w.startId === endId && w.endId === startId),
+                w.floorId === state.currentFloorId &&
+                ((w.startId === startId && w.endId === endId) ||
+                (w.startId === endId && w.endId === startId)),
         );
         if (existing) return existing.id;
 
@@ -196,6 +362,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                 ...s.walls,
                 [id]: {
                     id,
+                    floorId: s.currentFloorId,
                     startId,
                     endId,
                     thickness: null,
@@ -427,6 +594,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                 ...s.walls,
                 [newWallId]: {
                     id: newWallId,
+                    floorId: wall.floorId,
                     startId: newCornerId,
                     endId: originalEndId,
                     thickness,
@@ -449,6 +617,8 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         let bestPoint: Point2D = { x: 0, y: 0 };
 
         for (const wall of Object.values(state.walls)) {
+            // Only find walls on the current floor
+            if (wall.floorId !== state.currentFloorId) continue;
             const startCorner = state.corners[wall.startId];
             const endCorner = state.corners[wall.endId];
             if (!startCorner || !endCorner) continue;
@@ -525,6 +695,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             selectedWallId: id,
             selectedCornerId: null,
             selectedRoomId: null,
+            selectedStaircaseId: null,
         })),
 
     selectCorner: (id) =>
@@ -532,6 +703,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             selectedCornerId: id,
             selectedWallId: null,
             selectedRoomId: null,
+            selectedStaircaseId: null,
         })),
 
     setHoveredWall: (id) => set(() => ({ hoveredWallId: id })),
@@ -548,7 +720,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     // ── Actions: history ──────────────────────────────────────────────────────
     pushHistory: () =>
         set((s) => {
-            const entry = makeHistoryEntry(s.corners, s.walls);
+            const entry = makeHistoryEntry(s.corners, s.walls, s.staircaseOpenings);
             // Truncate any future entries if we've undone some steps
             const truncated = s.history.slice(0, s.historyIndex + 1);
             const newHistory = [...truncated, entry];
@@ -569,9 +741,11 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             return {
                 corners: JSON.parse(JSON.stringify(entry.corners)),
                 walls: JSON.parse(JSON.stringify(entry.walls)),
+                staircaseOpenings: JSON.parse(JSON.stringify(entry.staircaseOpenings)),
                 historyIndex: s.historyIndex - 1,
                 selectedWallId: null,
                 selectedCornerId: null,
+                selectedStaircaseId: null,
                 drawingFromCornerId: null,
                 drawingCursor: null,
             };
@@ -586,9 +760,11 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             return {
                 corners: JSON.parse(JSON.stringify(entry.corners)),
                 walls: JSON.parse(JSON.stringify(entry.walls)),
+                staircaseOpenings: JSON.parse(JSON.stringify(entry.staircaseOpenings)),
                 historyIndex: nextIndex - 1,
                 selectedWallId: null,
                 selectedCornerId: null,
+                selectedStaircaseId: null,
             };
         }),
 
@@ -599,6 +775,8 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         let nearest: CornerNode | null = null;
         let nearestDist = Infinity;
         for (const corner of Object.values(state.corners)) {
+            // Only snap to corners on the current floor
+            if (corner.floorId !== state.currentFloorId) continue;
             const d = distance(corner.position, position);
             if (d < state.snap.cornerSnapRadius && d < nearestDist) {
                 nearest = corner;
@@ -621,7 +799,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     getWallsAtCorner: (cornerId) => {
         const state = get();
         return Object.values(state.walls)
-            .filter((w) => w.startId === cornerId || w.endId === cornerId)
+            .filter((w) => w.floorId === state.currentFloorId && (w.startId === cornerId || w.endId === cornerId))
             .map((w) => w.id);
     },
 
@@ -673,6 +851,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     });
                 }
                 floorplanPayload = {
+                    floorId: state.floorplan.floorId,
                     url: imageDataUrl,
                     name: state.floorplan.name,
                     widthMeters: state.floorplan.widthMeters,
@@ -690,9 +869,11 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     name: planName,
                     defaultWallThickness: state.defaultWallThickness,
                     defaultWallHeight: state.defaultWallHeight,
+                    floors: state.floors,
                     corners: state.corners,
                     walls: state.walls,
                     floorplan: floorplanPayload,
+                    staircaseOpenings: state.staircaseOpenings,
                 }),
             });
             if (!res.ok) throw new Error("Save failed");
@@ -714,6 +895,10 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             const res = await fetch(`/api/plans/${id}`);
             if (!res.ok) throw new Error("Load failed");
             const data = await res.json();
+            const loadedFloors: Floor[] = data.floors?.length
+                ? data.floors
+                : [createDefaultFloor()];
+            const currentFloorId = loadedFloors.sort((a, b) => a.level - b.level)[0].id;
             set({
                 currentPlanId: data.id,
                 currentPlanName: data.name,
@@ -721,11 +906,14 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     data.defaultWallThickness ?? DEFAULT_WALL_THICKNESS,
                 defaultWallHeight:
                     data.defaultWallHeight ?? DEFAULT_WALL_HEIGHT,
+                floors: loadedFloors,
+                currentFloorId,
                 corners: data.corners ?? {},
                 walls: data.walls ?? {},
                 rooms: {},
                 floorplan: data.floorplan
                     ? {
+                          floorId: data.floorplan.floorId ?? currentFloorId,
                           url: data.floorplan.url,
                           name: data.floorplan.name,
                           widthMeters: data.floorplan.widthMeters,
@@ -734,9 +922,11 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                           opacity: data.floorplan.opacity ?? 0.5,
                       }
                     : null,
+                staircaseOpenings: data.staircaseOpenings ?? {},
                 selectedWallId: null,
                 selectedCornerId: null,
                 selectedRoomId: null,
+                selectedStaircaseId: null,
                 hoveredWallId: null,
                 hoveredCornerId: null,
                 drawingFromCornerId: null,
@@ -756,17 +946,24 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     },
 
     hydratePlan: (data) => {
+        const hydratedFloors: Floor[] = data.floors?.length
+            ? data.floors
+            : [createDefaultFloor()];
+        const currentFloorId = [...hydratedFloors].sort((a, b) => a.level - b.level)[0].id;
         set({
             currentPlanId: data.id,
             currentPlanName: data.name,
             defaultWallThickness:
                 data.defaultWallThickness ?? DEFAULT_WALL_THICKNESS,
             defaultWallHeight: data.defaultWallHeight ?? DEFAULT_WALL_HEIGHT,
+            floors: hydratedFloors,
+            currentFloorId,
             corners: data.corners ?? {},
             walls: data.walls ?? {},
             rooms: {},
             floorplan: data.floorplan
                 ? {
+                      floorId: data.floorplan.floorId ?? currentFloorId,
                       url: data.floorplan.url,
                       name: data.floorplan.name,
                       widthMeters: data.floorplan.widthMeters,
@@ -775,9 +972,11 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                       opacity: data.floorplan.opacity ?? 0.5,
                   }
                 : null,
+            staircaseOpenings: data.staircaseOpenings ?? {},
             selectedWallId: null,
             selectedCornerId: null,
             selectedRoomId: null,
+            selectedStaircaseId: null,
             hoveredWallId: null,
             hoveredCornerId: null,
             drawingFromCornerId: null,
@@ -798,16 +997,21 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         if (state.floorplan?.url?.startsWith("blob:")) {
             URL.revokeObjectURL(state.floorplan.url);
         }
+        const defaultFloor = createDefaultFloor();
         set({
             currentPlanId: null,
             currentPlanName: "Untitled Plan",
+            floors: [defaultFloor],
+            currentFloorId: defaultFloor.id,
             corners: {},
             walls: {},
             rooms: {},
             floorplan: null,
+            staircaseOpenings: {},
             selectedWallId: null,
             selectedCornerId: null,
             selectedRoomId: null,
+            selectedStaircaseId: null,
             hoveredWallId: null,
             hoveredCornerId: null,
             drawingFromCornerId: null,

@@ -18,13 +18,29 @@ export const plans = sqliteTable("plans", {
 });
 
 // ---------------------------------------------------------------------------
-// 2. Corners — corner nodes in the plan
+// 2. Floors — individual floors within a plan
+// ---------------------------------------------------------------------------
+export const floors = sqliteTable("floors", {
+    id: text("id").primaryKey(),
+    planId: text("plan_id")
+        .notNull()
+        .references(() => plans.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    level: integer("level").notNull().default(0),
+    floorHeight: real("floor_height").notNull().default(2.8),
+});
+
+// ---------------------------------------------------------------------------
+// 3. Corners — corner nodes in the plan
 // ---------------------------------------------------------------------------
 export const corners = sqliteTable("corners", {
     id: text("id").primaryKey(),
     planId: text("plan_id")
         .notNull()
         .references(() => plans.id, { onDelete: "cascade" }),
+    floorId: text("floor_id")
+        .notNull()
+        .references(() => floors.id, { onDelete: "cascade" }),
     x: real("x").notNull(),
     y: real("y").notNull(),
 });
@@ -37,6 +53,9 @@ export const walls = sqliteTable("walls", {
     planId: text("plan_id")
         .notNull()
         .references(() => plans.id, { onDelete: "cascade" }),
+    floorId: text("floor_id")
+        .notNull()
+        .references(() => floors.id, { onDelete: "cascade" }),
     startId: text("start_id").notNull(),
     endId: text("end_id").notNull(),
     thickness: real("thickness"),
@@ -83,12 +102,29 @@ export const floorplanImages = sqliteTable("floorplan_images", {
     id: text("id").primaryKey(),
     planId: text("plan_id")
         .notNull()
-        .unique()
         .references(() => plans.id, { onDelete: "cascade" }),
+    floorId: text("floor_id")
+        .notNull()
+        .references(() => floors.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     imageData: text("image_data").notNull(), // base64 data URL
     widthMeters: real("width_meters").notNull(),
     heightMeters: real("height_meters").notNull(),
     scale: real("scale").notNull().default(1),
     opacity: real("opacity").notNull().default(0.5),
+});
+
+// ---------------------------------------------------------------------------
+// 7. Staircase Openings — rectangular staircase areas on floors
+// ---------------------------------------------------------------------------
+export const staircaseOpenings = sqliteTable("staircase_openings", {
+    id: text("id").primaryKey(),
+    floorId: text("floor_id")
+        .notNull()
+        .references(() => floors.id, { onDelete: "cascade" }),
+    x: real("x").notNull(),
+    y: real("y").notNull(),
+    width: real("width").notNull().default(1.0),
+    depth: real("depth").notNull().default(2.5),
+    rotation: real("rotation").notNull().default(0),
 });
