@@ -405,7 +405,7 @@ export function Toolbar() {
 
           {/* Current plan name */}
           {currentPlanId && (
-            <span className="text-xs text-gray-400 bg-gray-800/70 backdrop-blur-sm rounded px-2 py-1 border border-gray-700/50 truncate max-w-[160px]">
+            <span className="text-xs text-gray-400 bg-gray-800/70 backdrop-blur-sm rounded px-2 py-1 border border-gray-700/50 truncate max-w-40">
               {currentPlanName}
             </span>
           )}
@@ -883,7 +883,7 @@ export function Toolbar() {
                           {plan.name}
                         </span>
                         {plan.id === currentPlanId && (
-                          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 bg-blue-600/30 text-blue-400 rounded">
+                          <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-blue-600/30 text-blue-400 rounded">
                             Current
                           </span>
                         )}
@@ -895,7 +895,7 @@ export function Toolbar() {
                     <button
                       onClick={() => handleDeletePlan(plan.id)}
                       disabled={deletingPlanId === plan.id}
-                      className="flex-shrink-0 ml-3 w-7 h-7 flex items-center justify-center rounded-md
+                      className="shrink-0 ml-3 w-7 h-7 flex items-center justify-center rounded-md
                                                 text-gray-500 hover:text-red-400 hover:bg-red-900/20 transition-all
                                                 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Delete plan"
