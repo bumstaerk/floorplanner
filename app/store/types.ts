@@ -2,8 +2,8 @@
 
 /** A 2D point in meters on the floorplan plane (Y-up in 3D → x/z in world) */
 export interface Point2D {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 }
 
 // ─── Wall model ────────────────────────────────────────────────────────────────
@@ -16,18 +16,18 @@ export type WallFaceSide = "left" | "right";
  * `elevation` = distance from floor to bottom of opening (meters).
  */
 export interface WallOpening {
-    id: string;
-    type: "door" | "window" | "hole";
-    /** Distance along the wall from the start point (meters) */
-    offset: number;
-    /** Width of the opening (meters) */
-    width: number;
-    /** Height of the opening (meters) */
-    height: number;
-    /** Distance from the floor to the bottom edge (meters) */
-    elevation: number;
-    /** Which face the opening belongs to */
-    face: WallFaceSide;
+  id: string;
+  type: "door" | "window" | "hole";
+  /** Distance along the wall from the start point (meters) */
+  offset: number;
+  /** Width of the opening (meters) */
+  width: number;
+  /** Height of the opening (meters) */
+  height: number;
+  /** Distance from the floor to the bottom edge (meters) */
+  elevation: number;
+  /** Which face the opening belongs to */
+  face: WallFaceSide;
 }
 
 /**
@@ -35,17 +35,17 @@ export interface WallOpening {
  * Position is given relative to the wall segment.
  */
 export interface WallComponent {
-    id: string;
-    type: string; // e.g. "light", "sensor", "switch", "outlet", …
-    label: string;
-    /** Distance along the wall from the start point (meters) */
-    offset: number;
-    /** Height from the floor (meters) */
-    elevation: number;
-    /** Which face the component is on */
-    face: WallFaceSide;
-    /** Arbitrary metadata for the component type */
-    meta?: Record<string, unknown>;
+  id: string;
+  type: string; // e.g. "light", "sensor", "switch", "outlet", …
+  label: string;
+  /** Distance along the wall from the start point (meters) */
+  offset: number;
+  /** Height from the floor (meters) */
+  elevation: number;
+  /** Which face the component is on */
+  face: WallFaceSide;
+  /** Arbitrary metadata for the component type */
+  meta?: Record<string, unknown>;
 }
 
 /**
@@ -58,58 +58,58 @@ export interface WallComponent {
  * to obtain the effective value.
  */
 export interface WallSegment {
-    id: string;
-    /** The floor this wall belongs to */
-    floorId: string;
-    /** ID of the start corner node */
-    startId: string;
-    /** ID of the end corner node */
-    endId: string;
-    /** Wall thickness in meters, or `null` to use plan default */
-    thickness: number | null;
-    /** Wall height in meters, or `null` to use plan default */
-    height: number | null;
-    /**
-     * Whether the wall is physically visible (rendered as solid geometry).
-     * When `false` the wall is invisible but still acts as a room divider
-     * in the graph — rooms on each side are detected as separate spaces.
-     * Default: `true`.
-     */
-    visible: boolean;
-    /** Openings punched into this wall */
-    openings: WallOpening[];
-    /** Components attached to this wall */
-    components: WallComponent[];
+  id: string;
+  /** The floor this wall belongs to */
+  floorId: string;
+  /** ID of the start corner node */
+  startId: string;
+  /** ID of the end corner node */
+  endId: string;
+  /** Wall thickness in meters, or `null` to use plan default */
+  thickness: number | null;
+  /** Wall height in meters, or `null` to use plan default */
+  height: number | null;
+  /**
+   * Whether the wall is physically visible (rendered as solid geometry).
+   * When `false` the wall is invisible but still acts as a room divider
+   * in the graph — rooms on each side are detected as separate spaces.
+   * Default: `true`.
+   */
+  visible: boolean;
+  /** Openings punched into this wall */
+  openings: WallOpening[];
+  /** Components attached to this wall */
+  components: WallComponent[];
 }
 
 // ─── Floors ───────────────────────────────────────────────────────────────────
 
 /** A floor/level within a plan */
 export interface Floor {
-    id: string;
-    /** User-assigned name (e.g. "Ground Floor", "Floor 1") */
-    name: string;
-    /** Integer level for ordering and 3D stacking (0 = ground, 1 = first floor, -1 = basement) */
-    level: number;
-    /** Floor-to-floor height in meters (used for 3D stacking offset) */
-    floorHeight: number;
+  id: string;
+  /** User-assigned name (e.g. "Ground Floor", "Floor 1") */
+  name: string;
+  /** Integer level for ordering and 3D stacking (0 = ground, 1 = first floor, -1 = basement) */
+  level: number;
+  /** Floor-to-floor height in meters (used for 3D stacking offset) */
+  floorHeight: number;
 }
 
 // ─── Staircase openings ───────────────────────────────────────────────────────
 
 /** A rectangular staircase opening placed on a floor */
 export interface StaircaseOpening {
-    id: string;
-    /** The floor this staircase belongs to */
-    floorId: string;
-    /** Center position in floorplan coordinates */
-    position: Point2D;
-    /** Width in meters */
-    width: number;
-    /** Depth in meters */
-    depth: number;
-    /** Rotation in radians */
-    rotation: number;
+  id: string;
+  /** The floor this staircase belongs to */
+  floorId: string;
+  /** Center position in floorplan coordinates */
+  position: Point2D;
+  /** Width in meters */
+  width: number;
+  /** Depth in meters */
+  depth: number;
+  /** Rotation in radians */
+  rotation: number;
 }
 
 // ─── Rooms ─────────────────────────────────────────────────────────────────────
@@ -119,256 +119,262 @@ export interface StaircaseOpening {
  * Detected automatically when walls form a closed loop.
  */
 export interface Room {
-    id: string;
-    /** The floor this room belongs to */
-    floorId: string;
-    /** User-assigned name for the room (e.g. "Living Room", "Kitchen") */
-    name: string;
-    /** Ordered list of corner IDs forming the room polygon (closed cycle) */
-    cornerIds: string[];
-    /** Wall IDs forming the room boundary */
-    wallIds: string[];
-    /** Centroid of the room polygon (for label placement) */
-    center: Point2D;
-    /** Area of the room in square meters */
-    area: number;
+  id: string;
+  /** The floor this room belongs to */
+  floorId: string;
+  /** User-assigned name for the room (e.g. "Living Room", "Kitchen") */
+  name: string;
+  /** Ordered list of corner IDs forming the room polygon (closed cycle) */
+  cornerIds: string[];
+  /** Wall IDs forming the room boundary */
+  wallIds: string[];
+  /** Centroid of the room polygon (for label placement) */
+  center: Point2D;
+  /** Area of the room in square meters */
+  area: number;
 }
 
 // ─── Corner nodes ──────────────────────────────────────────────────────────────
 
 /** A shared corner / junction point referenced by one or more WallSegments */
 export interface CornerNode {
-    id: string;
-    position: Point2D;
-    /** The floor this corner belongs to */
-    floorId: string;
+  id: string;
+  position: Point2D;
+  /** The floor this corner belongs to */
+  floorId: string;
 }
 
 // ─── Floorplan image ───────────────────────────────────────────────────────────
 
 export interface FloorplanImage {
-    /** The floor this image belongs to */
-    floorId: string;
-    /** Object URL or data URL of the uploaded image */
-    url: string;
-    /** Original file name */
-    name: string;
-    /** Real-world width in meters (user-configurable for scaling) */
-    widthMeters: number;
-    /** Real-world height in meters */
-    heightMeters: number;
-    /** Uniform scale multiplier (default 1.0). Multiplies widthMeters/heightMeters when rendering. */
-    scale: number;
-    /** Opacity when rendering (0-1) */
-    opacity: number;
+  /** The floor this image belongs to */
+  floorId: string;
+  /** Object URL or data URL of the uploaded image */
+  url: string;
+  /** Original file name */
+  name: string;
+  /** Real-world width in meters (user-configurable for scaling) */
+  widthMeters: number;
+  /** Real-world height in meters */
+  heightMeters: number;
+  /** Uniform scale multiplier (default 1.0). Multiplies widthMeters/heightMeters when rendering. */
+  scale: number;
+  /** Opacity when rendering (0-1) */
+  opacity: number;
 }
 
 // ─── Editor state ──────────────────────────────────────────────────────────────
 
 export type EditorMode = "build" | "preview";
 
-export type BuildTool = "select" | "wall" | "pan" | "staircase";
+export type BuildTool = "select" | "wall" | "pan" | "staircase" | "measure";
 
 /** Snap settings */
 export interface SnapSettings {
-    enabled: boolean;
-    /** Grid size in meters */
-    gridSize: number;
-    /** Snap to existing corners within this radius (meters) */
-    cornerSnapRadius: number;
-    /** Snap to angle multiples (degrees), e.g. 45 */
-    angleSnap: number;
+  enabled: boolean;
+  /** Grid size in meters */
+  gridSize: number;
+  /** Snap to existing corners within this radius (meters) */
+  cornerSnapRadius: number;
+  /** Snap to angle multiples (degrees), e.g. 45 */
+  angleSnap: number;
 }
 
 /** Grid display settings */
 export interface GridSettings {
-    visible: boolean;
-    size: number; // total grid extent in meters
-    divisions: number;
+  visible: boolean;
+  size: number; // total grid extent in meters
+  divisions: number;
 }
 
 // ─── History (undo/redo) ───────────────────────────────────────────────────────
 
 export interface HistoryEntry {
-    corners: Record<string, CornerNode>;
-    walls: Record<string, WallSegment>;
-    staircaseOpenings: Record<string, StaircaseOpening>;
+  corners: Record<string, CornerNode>;
+  walls: Record<string, WallSegment>;
+  staircaseOpenings: Record<string, StaircaseOpening>;
 }
 
 // ─── Store shape ───────────────────────────────────────────────────────────────
 
 export interface FloorplanState {
-    // ── Data ──
-    corners: Record<string, CornerNode>;
-    walls: Record<string, WallSegment>;
-    rooms: Record<string, Room>;
-    floorplan: FloorplanImage | null;
+  // ── Data ──
+  corners: Record<string, CornerNode>;
+  walls: Record<string, WallSegment>;
+  rooms: Record<string, Room>;
+  floorplan: FloorplanImage | null;
 
-    // ── Floors ──
-    floors: Floor[];
-    currentFloorId: string;
-    staircaseOpenings: Record<string, StaircaseOpening>;
+  // ── Floors ──
+  floors: Floor[];
+  currentFloorId: string;
+  staircaseOpenings: Record<string, StaircaseOpening>;
 
-    // ── Plan persistence ──
-    currentPlanId: string | null;
-    currentPlanName: string;
-    saving: boolean;
-    loading: boolean;
+  // ── Plan persistence ──
+  currentPlanId: string | null;
+  currentPlanName: string;
+  saving: boolean;
+  loading: boolean;
 
-    // ── Editor ──
-    mode: EditorMode;
-    activeTool: BuildTool;
-    selectedWallId: string | null;
-    selectedCornerId: string | null;
-    selectedRoomId: string | null;
-    selectedStaircaseId: string | null;
-    hoveredWallId: string | null;
-    hoveredCornerId: string | null;
+  // ── Editor ──
+  mode: EditorMode;
+  activeTool: BuildTool;
+  selectedWallId: string | null;
+  selectedCornerId: string | null;
+  selectedRoomId: string | null;
+  selectedStaircaseId: string | null;
+  hoveredWallId: string | null;
+  hoveredCornerId: string | null;
 
-    /** The corner id where a wall-draw operation started (null = not drawing) */
-    drawingFromCornerId: string | null;
-    /** Live cursor position while drawing (world coords) */
-    drawingCursor: Point2D | null;
+  /** The corner id where a wall-draw operation started (null = not drawing) */
+  drawingFromCornerId: string | null;
+  /** Live cursor position while drawing (world coords) */
+  drawingCursor: Point2D | null;
 
-    // ── Settings ──
-    snap: SnapSettings;
-    grid: GridSettings;
+  // ── Settings ──
+  snap: SnapSettings;
+  grid: GridSettings;
+  defaultWallThickness: number;
+  defaultWallHeight: number;
+
+  // ── History ──
+  history: HistoryEntry[];
+  historyIndex: number;
+
+  // ── Actions: floors ──
+  addFloor: () => string;
+  removeFloor: (floorId: string) => void;
+  updateFloor: (
+    floorId: string,
+    patch: Partial<Pick<Floor, "name" | "floorHeight">>,
+  ) => void;
+  setCurrentFloor: (floorId: string) => void;
+
+  // ── Actions: staircase openings ──
+  addStaircaseOpening: (position: Point2D) => string;
+  removeStaircaseOpening: (id: string) => void;
+  updateStaircaseOpening: (
+    id: string,
+    patch: Partial<Omit<StaircaseOpening, "id" | "floorId">>,
+  ) => void;
+  selectStaircaseOpening: (id: string | null) => void;
+
+  // ── Actions: mode / tool ──
+  setMode: (mode: EditorMode) => void;
+  setActiveTool: (tool: BuildTool) => void;
+
+  // ── Actions: rooms ──
+  /** Re-detect all rooms from the current wall/corner graph */
+  detectRooms: () => void;
+  /** Update a room's editable properties (name) */
+  updateRoom: (id: string, patch: Partial<Pick<Room, "name">>) => void;
+  /** Select a room by ID */
+  selectRoom: (id: string | null) => void;
+
+  // ── Actions: floorplan image ──
+  setFloorplan: (image: FloorplanImage) => void;
+  updateFloorplan: (patch: Partial<FloorplanImage>) => void;
+  removeFloorplan: () => void;
+
+  // ── Actions: corners ──
+  addCorner: (position: Point2D) => string;
+  moveCorner: (id: string, position: Point2D) => void;
+  removeCorner: (id: string) => void;
+
+  // ── Actions: walls ──
+  addWall: (startId: string, endId: string) => string;
+  removeWall: (id: string) => void;
+  updateWall: (
+    id: string,
+    patch: Partial<Pick<WallSegment, "thickness" | "height" | "visible">>,
+  ) => void;
+
+  // ── Helpers: resolved wall dimensions ──
+  /** Get the effective thickness of a wall (own value or plan default) */
+  getResolvedWallThickness: (wallId: string) => number;
+  /** Get the effective height of a wall (own value or plan default) */
+  getResolvedWallHeight: (wallId: string) => number;
+
+  // ── Actions: openings ──
+  addOpening: (wallId: string, opening: Omit<WallOpening, "id">) => string;
+  removeOpening: (wallId: string, openingId: string) => void;
+  updateOpening: (
+    wallId: string,
+    openingId: string,
+    patch: Partial<Omit<WallOpening, "id">>,
+  ) => void;
+
+  // ── Actions: components ──
+  addComponent: (
+    wallId: string,
+    component: Omit<WallComponent, "id">,
+  ) => string;
+  removeComponent: (wallId: string, componentId: string) => void;
+  updateComponent: (
+    wallId: string,
+    componentId: string,
+    patch: Partial<Omit<WallComponent, "id">>,
+  ) => void;
+
+  // ── Actions: drawing ──
+  startDrawing: (cornerId: string) => void;
+  updateDrawingCursor: (cursor: Point2D | null) => void;
+  finishDrawing: (cornerId: string) => void;
+  cancelDrawing: () => void;
+
+  // ── Actions: selection / hover ──
+  selectWall: (id: string | null) => void;
+  selectCorner: (id: string | null) => void;
+  setHoveredWall: (id: string | null) => void;
+  setHoveredCorner: (id: string | null) => void;
+
+  // ── Actions: snap & grid ──
+  updateSnap: (patch: Partial<SnapSettings>) => void;
+  updateGrid: (patch: Partial<GridSettings>) => void;
+  setDefaultWallThickness: (v: number) => void;
+  setDefaultWallHeight: (v: number) => void;
+
+  // ── Actions: history ──
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
+
+  // ── Helpers ──
+  /** Find the nearest existing corner within snap radius, or null */
+  findSnapCorner: (position: Point2D) => CornerNode | null;
+  /** Snap a position to the grid */
+  snapToGrid: (position: Point2D) => Point2D;
+  /** Get all wall IDs connected to a corner */
+  getWallsAtCorner: (cornerId: string) => string[];
+  /** Calculate wall length in meters */
+  getWallLength: (wallId: string) => number;
+
+  /** Split a wall at a given position, inserting a new corner and creating two wall segments */
+  splitWall: (wallId: string, position: Point2D) => string;
+
+  /** Find the nearest wall to a given point (within tolerance). Returns the wall ID and projected point, or null. */
+  findWallAtPoint: (
+    position: Point2D,
+  ) => { wallId: string; point: Point2D } | null;
+
+  // ── Actions: plan persistence ──
+  /** Save the current plan to the server (creates or updates) */
+  savePlan: (name?: string) => Promise<void>;
+  /** Load a plan from the server by ID */
+  loadPlan: (id: string) => Promise<void>;
+  /** Hydrate the store directly from pre-loaded plan data (no fetch) */
+  hydratePlan: (data: {
+    id: string;
+    name: string;
     defaultWallThickness: number;
     defaultWallHeight: number;
-
-    // ── History ──
-    history: HistoryEntry[];
-    historyIndex: number;
-
-    // ── Actions: floors ──
-    addFloor: () => string;
-    removeFloor: (floorId: string) => void;
-    updateFloor: (floorId: string, patch: Partial<Pick<Floor, "name" | "floorHeight">>) => void;
-    setCurrentFloor: (floorId: string) => void;
-
-    // ── Actions: staircase openings ──
-    addStaircaseOpening: (position: Point2D) => string;
-    removeStaircaseOpening: (id: string) => void;
-    updateStaircaseOpening: (id: string, patch: Partial<Omit<StaircaseOpening, "id" | "floorId">>) => void;
-    selectStaircaseOpening: (id: string | null) => void;
-
-    // ── Actions: mode / tool ──
-    setMode: (mode: EditorMode) => void;
-    setActiveTool: (tool: BuildTool) => void;
-
-    // ── Actions: rooms ──
-    /** Re-detect all rooms from the current wall/corner graph */
-    detectRooms: () => void;
-    /** Update a room's editable properties (name) */
-    updateRoom: (id: string, patch: Partial<Pick<Room, "name">>) => void;
-    /** Select a room by ID */
-    selectRoom: (id: string | null) => void;
-
-    // ── Actions: floorplan image ──
-    setFloorplan: (image: FloorplanImage) => void;
-    updateFloorplan: (patch: Partial<FloorplanImage>) => void;
-    removeFloorplan: () => void;
-
-    // ── Actions: corners ──
-    addCorner: (position: Point2D) => string;
-    moveCorner: (id: string, position: Point2D) => void;
-    removeCorner: (id: string) => void;
-
-    // ── Actions: walls ──
-    addWall: (startId: string, endId: string) => string;
-    removeWall: (id: string) => void;
-    updateWall: (
-        id: string,
-        patch: Partial<Pick<WallSegment, "thickness" | "height" | "visible">>,
-    ) => void;
-
-    // ── Helpers: resolved wall dimensions ──
-    /** Get the effective thickness of a wall (own value or plan default) */
-    getResolvedWallThickness: (wallId: string) => number;
-    /** Get the effective height of a wall (own value or plan default) */
-    getResolvedWallHeight: (wallId: string) => number;
-
-    // ── Actions: openings ──
-    addOpening: (wallId: string, opening: Omit<WallOpening, "id">) => string;
-    removeOpening: (wallId: string, openingId: string) => void;
-    updateOpening: (
-        wallId: string,
-        openingId: string,
-        patch: Partial<Omit<WallOpening, "id">>,
-    ) => void;
-
-    // ── Actions: components ──
-    addComponent: (
-        wallId: string,
-        component: Omit<WallComponent, "id">,
-    ) => string;
-    removeComponent: (wallId: string, componentId: string) => void;
-    updateComponent: (
-        wallId: string,
-        componentId: string,
-        patch: Partial<Omit<WallComponent, "id">>,
-    ) => void;
-
-    // ── Actions: drawing ──
-    startDrawing: (cornerId: string) => void;
-    updateDrawingCursor: (cursor: Point2D | null) => void;
-    finishDrawing: (cornerId: string) => void;
-    cancelDrawing: () => void;
-
-    // ── Actions: selection / hover ──
-    selectWall: (id: string | null) => void;
-    selectCorner: (id: string | null) => void;
-    setHoveredWall: (id: string | null) => void;
-    setHoveredCorner: (id: string | null) => void;
-
-    // ── Actions: snap & grid ──
-    updateSnap: (patch: Partial<SnapSettings>) => void;
-    updateGrid: (patch: Partial<GridSettings>) => void;
-    setDefaultWallThickness: (v: number) => void;
-    setDefaultWallHeight: (v: number) => void;
-
-    // ── Actions: history ──
-    pushHistory: () => void;
-    undo: () => void;
-    redo: () => void;
-
-    // ── Helpers ──
-    /** Find the nearest existing corner within snap radius, or null */
-    findSnapCorner: (position: Point2D) => CornerNode | null;
-    /** Snap a position to the grid */
-    snapToGrid: (position: Point2D) => Point2D;
-    /** Get all wall IDs connected to a corner */
-    getWallsAtCorner: (cornerId: string) => string[];
-    /** Calculate wall length in meters */
-    getWallLength: (wallId: string) => number;
-
-    /** Split a wall at a given position, inserting a new corner and creating two wall segments */
-    splitWall: (wallId: string, position: Point2D) => string;
-
-    /** Find the nearest wall to a given point (within tolerance). Returns the wall ID and projected point, or null. */
-    findWallAtPoint: (
-        position: Point2D,
-    ) => { wallId: string; point: Point2D } | null;
-
-    // ── Actions: plan persistence ──
-    /** Save the current plan to the server (creates or updates) */
-    savePlan: (name?: string) => Promise<void>;
-    /** Load a plan from the server by ID */
-    loadPlan: (id: string) => Promise<void>;
-    /** Hydrate the store directly from pre-loaded plan data (no fetch) */
-    hydratePlan: (data: {
-        id: string;
-        name: string;
-        defaultWallThickness: number;
-        defaultWallHeight: number;
-        floors: Floor[];
-        corners: Record<string, CornerNode>;
-        walls: Record<string, WallSegment>;
-        floorplan: FloorplanImage | null;
-        staircaseOpenings: Record<string, StaircaseOpening>;
-    }) => void;
-    /** Reset the editor to a blank state */
-    newPlan: () => void;
-    /** Update the current plan name without saving */
-    setCurrentPlanName: (name: string) => void;
+    floors: Floor[];
+    corners: Record<string, CornerNode>;
+    walls: Record<string, WallSegment>;
+    floorplan: FloorplanImage | null;
+    staircaseOpenings: Record<string, StaircaseOpening>;
+  }) => void;
+  /** Reset the editor to a blank state */
+  newPlan: () => void;
+  /** Update the current plan name without saving */
+  setCurrentPlanName: (name: string) => void;
 }

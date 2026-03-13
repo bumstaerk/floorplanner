@@ -44,6 +44,15 @@ export function StatusBar() {
         {mode === "build" && activeTool === "staircase" && (
           <span>Click to place staircase opening</span>
         )}
+        {mode === "build" && activeTool === "measure" && (
+          <span>
+            Click to set start point, click again to measure •{" "}
+            <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-[10px]">
+              Right-click
+            </kbd>{" "}
+            to clear
+          </span>
+        )}
         {mode === "build" && activeTool === "pan" && (
           <span>Drag to pan • Scroll to zoom</span>
         )}

@@ -10,6 +10,7 @@ import { Wall2D } from "./Wall2D";
 import { Corner2D } from "./Corner2D";
 import { Room2D } from "./Room2D";
 import { DrawingLine } from "./DrawingLine";
+import { MeasureLine } from "./MeasureLine";
 import { Staircase2D } from "./Staircase2D";
 import type { Point2D } from "../store/types";
 
@@ -364,6 +365,10 @@ function BuildKeyboardHandler() {
           state.setActiveTool("pan");
           return;
         }
+        if (e.key === "m" || e.key === "M") {
+          state.setActiveTool("measure");
+          return;
+        }
         if (e.key === "s" || e.key === "S") {
           state.updateSnap({ enabled: !state.snap.enabled });
           return;
@@ -478,6 +483,9 @@ export function BuildScene() {
 
       {/* In-progress drawing line */}
       <DrawingLine />
+
+      {/* Measure tool ruler */}
+      <MeasureLine />
 
       {/* Keyboard handler */}
       <BuildKeyboardHandler />

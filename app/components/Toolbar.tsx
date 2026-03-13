@@ -497,6 +497,26 @@ export function Toolbar() {
                   />
                 </svg>
               </ToolButton>
+              <ToolButton
+                active={activeTool === "measure"}
+                onClick={() => handleToolChange("measure")}
+                title="Measure (M)"
+                shortcut="M"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2 17l1.5-1.5M22 7l-1.5 1.5M2 17l5-5m0 0l1.5 1.5M7 12l3-3m0 0l1.5 1.5M10 9l3-3m0 0l1.5 1.5M13 6l3-3m0 0l1.5 1.5M16 3l6 6M2 17l6 6"
+                  />
+                </svg>
+              </ToolButton>
             </div>
 
             {/* Divider */}
