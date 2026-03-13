@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { useFloorplanStore } from "../store/useFloorplanStore";
+import { useThemeStore } from "../store/useThemeStore";
 import { useShallow } from "zustand/react/shallow";
 import type { BuildTool, EditorMode } from "../store/types";
 
@@ -222,6 +223,7 @@ export function Toolbar() {
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
+      {/* Theme toggle (floating, top-right corner area) */}
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -235,13 +237,13 @@ export function Toolbar() {
       <div className="flex items-center justify-between p-3 gap-3">
         {/* Left group: Mode switcher + Plan controls */}
         <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+          <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
             <button
               onClick={() => handleModeChange("build")}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
                 mode === "build"
                   ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -266,7 +268,7 @@ export function Toolbar() {
               className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-150 ${
                 mode === "preview"
                   ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -294,10 +296,10 @@ export function Toolbar() {
           </div>
 
           {/* Divider */}
-          <div className="w-px h-8 bg-gray-600" />
+          <div className="w-px h-8 bg-gray-300 dark:bg-gray-600" />
 
           {/* Plan controls: New / Save / Load */}
-          <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+          <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
             <ToolButton active={false} onClick={newPlan} title="New Plan">
               <svg
                 className="w-4 h-4"
@@ -405,7 +407,7 @@ export function Toolbar() {
 
           {/* Current plan name */}
           {currentPlanId && (
-            <span className="text-xs text-gray-400 bg-gray-800/70 backdrop-blur-sm rounded px-2 py-1 border border-gray-700/50 truncate max-w-40">
+            <span className="text-xs text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded px-2 py-1 border border-gray-300/50 dark:border-gray-700/50 truncate max-w-40">
               {currentPlanName}
             </span>
           )}
@@ -414,7 +416,7 @@ export function Toolbar() {
         {/* Center group: Build tools (only in build mode) */}
         {mode === "build" && (
           <div className="flex items-center gap-2 pointer-events-auto">
-            <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+            <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
               <ToolButton
                 active={activeTool === "select"}
                 onClick={() => handleToolChange("select")}
@@ -498,10 +500,10 @@ export function Toolbar() {
             </div>
 
             {/* Divider */}
-            <div className="w-px h-8 bg-gray-600" />
+            <div className="w-px h-8 bg-gray-300 dark:bg-gray-600" />
 
             {/* Snap toggle */}
-            <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+            <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
               <ToolButton
                 active={snap.enabled}
                 onClick={() => updateSnap({ enabled: !snap.enabled })}
@@ -548,7 +550,7 @@ export function Toolbar() {
         <div className="flex items-center gap-2 pointer-events-auto">
           {/* Undo / Redo */}
           {mode === "build" && (
-            <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+            <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
               <ToolButton
                 active={false}
                 onClick={undo}
@@ -593,7 +595,7 @@ export function Toolbar() {
           )}
 
           {/* Floorplan upload */}
-          <div className="flex bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-700/50">
+          <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
             {floorplan ? (
               <>
                 <ToolButton
@@ -638,7 +640,7 @@ export function Toolbar() {
             ) : (
               <button
                 onClick={handleUploadClick}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-md transition-all duration-150"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-md transition-all duration-150"
               >
                 <svg
                   className="w-4 h-4"
@@ -657,21 +659,24 @@ export function Toolbar() {
               </button>
             )}
           </div>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
         </div>
       </div>
 
       {/* Floor selector panel (left side, build mode only) */}
       {mode === "build" && (
         <div className="absolute top-16 left-3 z-10 pointer-events-auto">
-          <div className="bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-700/50 overflow-hidden w-44">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/50">
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-300/50 dark:border-gray-700/50 overflow-hidden w-44">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-300/50 dark:border-gray-700/50">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Floors
               </span>
               <div className="flex gap-1">
                 <button
                   onClick={() => addFloor()}
-                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all"
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all"
                   title="Add Floor"
                 >
                   <svg
@@ -691,7 +696,7 @@ export function Toolbar() {
                 <button
                   onClick={() => removeFloor(currentFloorId)}
                   disabled={floors.length <= 1}
-                  className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-6 h-6 flex items-center justify-center rounded text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Delete Current Floor"
                 >
                   <svg
@@ -719,13 +724,13 @@ export function Toolbar() {
                     onClick={() => setCurrentFloor(floor.id)}
                     className={`w-full text-left px-3 py-2 text-sm transition-all ${
                       floor.id === currentFloorId
-                        ? "bg-blue-600/20 text-blue-300 border-l-2 border-blue-500"
-                        : "text-gray-300 hover:bg-gray-700/40 border-l-2 border-transparent"
+                        ? "bg-blue-600/20 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-200/40 dark:hover:bg-gray-700/40 border-l-2 border-transparent"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="truncate">{floor.name}</span>
-                      <span className="text-[10px] text-gray-500 ml-1">
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">
                         L{floor.level}
                       </span>
                     </div>
@@ -739,18 +744,20 @@ export function Toolbar() {
       {/* ── Save name dialog ──────────────────────────────────────────── */}
       {showSaveDialog && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/50 backdrop-blur-sm pointer-events-auto"
           onClick={() => setShowSaveDialog(false)}
         >
           <div
-            className="bg-gray-800 rounded-xl shadow-2xl border border-gray-700/50 w-full max-w-sm mx-4 overflow-hidden"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-300/50 dark:border-gray-700/50 w-full max-w-sm mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-gray-700/50">
-              <h2 className="text-base font-semibold text-white">Save Plan</h2>
+            <div className="px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                Save Plan
+              </h2>
             </div>
             <div className="px-5 py-4">
-              <label className="text-xs text-gray-400 block mb-1.5">
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1.5">
                 Plan Name
               </label>
               <input
@@ -762,14 +769,14 @@ export function Toolbar() {
                 }}
                 placeholder="Untitled Plan"
                 autoFocus
-                className="w-full bg-gray-700/50 text-gray-200 rounded-md border border-gray-600 px-3 py-2 text-sm
+                className="w-full bg-gray-100/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm
                                     focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
               />
             </div>
-            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-700/50">
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={() => setShowSaveDialog(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-md transition-all"
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-md transition-all"
               >
                 Cancel
               </button>
@@ -787,19 +794,21 @@ export function Toolbar() {
       {/* ── Load dialog ──────────────────────────────────────────────── */}
       {showLoadDialog && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/50 backdrop-blur-sm pointer-events-auto"
           onClick={() => setShowLoadDialog(false)}
         >
           <div
-            className="bg-gray-800 rounded-xl shadow-2xl border border-gray-700/50 w-full max-w-lg mx-4 overflow-hidden"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-300/50 dark:border-gray-700/50 w-full max-w-lg mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/50">
-              <h2 className="text-base font-semibold text-white">Load Plan</h2>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                Load Plan
+              </h2>
               <button
                 onClick={() => setShowLoadDialog(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all"
               >
                 <svg
                   className="w-4 h-4"
@@ -820,7 +829,7 @@ export function Toolbar() {
             {/* Body */}
             <div className="max-h-[60vh] overflow-y-auto">
               {loadingPlans && (
-                <div className="flex items-center justify-center py-12 text-gray-400">
+                <div className="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
                   <svg
                     className="w-5 h-5 animate-spin mr-2"
                     fill="none"
@@ -845,9 +854,9 @@ export function Toolbar() {
               )}
 
               {!loadingPlans && savedPlans.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                   <svg
-                    className="w-10 h-10 mb-3 text-gray-600"
+                    className="w-10 h-10 mb-3 text-gray-400 dark:text-gray-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -860,7 +869,7 @@ export function Toolbar() {
                     />
                   </svg>
                   <p className="text-sm">No saved plans yet</p>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">
                     Save a plan to see it here
                   </p>
                 </div>
@@ -870,8 +879,10 @@ export function Toolbar() {
                 savedPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`flex items-center justify-between px-5 py-3 hover:bg-gray-700/40 transition-colors border-b border-gray-700/30 last:border-b-0 ${
-                      plan.id === currentPlanId ? "bg-blue-900/20" : ""
+                    className={`flex items-center justify-between px-5 py-3 hover:bg-gray-100/60 dark:hover:bg-gray-700/40 transition-colors border-b border-gray-200/30 dark:border-gray-700/30 last:border-b-0 ${
+                      plan.id === currentPlanId
+                        ? "bg-blue-100/30 dark:bg-blue-900/20"
+                        : ""
                     }`}
                   >
                     <button
@@ -879,7 +890,7 @@ export function Toolbar() {
                       className="flex-1 text-left min-w-0"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white truncate">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {plan.name}
                         </span>
                         {plan.id === currentPlanId && (
@@ -888,7 +899,7 @@ export function Toolbar() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         Updated {formatRelativeTime(plan.updatedAt)}
                       </div>
                     </button>
@@ -994,16 +1005,63 @@ function ToolButton({
         ${
           active
             ? "bg-blue-600 text-white shadow-md"
-            : "text-gray-300 hover:text-white hover:bg-gray-700/50"
+            : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
         }
       `}
     >
       {children}
       {shortcut && (
-        <span className="absolute -bottom-0.5 right-0.5 text-[9px] text-gray-500 font-mono">
+        <span className="absolute -bottom-0.5 right-0.5 text-[9px] text-gray-400 dark:text-gray-500 font-mono">
           {shortcut}
         </span>
       )}
     </button>
+  );
+}
+
+function ThemeToggle() {
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
+  return (
+    <div className="flex bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-gray-300/50 dark:border-gray-700/50">
+      <button
+        onClick={toggleTheme}
+        title={
+          theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+        }
+        className="relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
+      >
+        {theme === "dark" ? (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+            />
+          </svg>
+        )}
+      </button>
+    </div>
   );
 }

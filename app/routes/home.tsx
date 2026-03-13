@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 import type { Route } from "./+types/home";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { BuildScene } from "../scene/BuildScene";
 import { PreviewScene } from "../scene/PreviewScene";
 import { Toolbar } from "../components/Toolbar";
 import { PropertiesPanel } from "../components/PropertiesPanel";
 import { StatusBar } from "../components/StatusBar";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { loadMostRecentPlan, type LoadedPlan } from "~/db/queries";
 
 export function meta({}: Route.MetaArgs) {
@@ -35,6 +36,21 @@ function Scene() {
 }
 
 /**
+ * Keeps the WebGL clear color in sync with the current theme.
+ * Runs inside the Canvas so it has access to the Three.js renderer via useThree.
+ */
+function ClearColorSync() {
+  const { gl } = useThree();
+  const colors = useThemeColors();
+
+  useEffect(() => {
+    gl.setClearColor(colors.canvasBg);
+  }, [gl, colors.canvasBg]);
+
+  return null;
+}
+
+/**
  * Hydrate the zustand store with the most recently saved plan from the
  * server-side loader.  Runs exactly once on the first client mount — the
  * ref guard ensures we never re-hydrate when React re-renders.
@@ -59,7 +75,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   useHydrateStore(plan);
 
   return (
-    <div className="relative w-screen h-screen bg-gray-950 overflow-hidden">
+    <div className="relative w-screen h-screen bg-gray-100 dark:bg-gray-950 overflow-hidden">
       {/* 3D Canvas */}
       <Canvas
         shadows
@@ -68,10 +84,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           alpha: false,
           powerPreference: "high-performance",
         }}
-        onCreated={({ gl }) => {
-          gl.setClearColor("#0f172a");
-        }}
       >
+        <ClearColorSync />
         <Scene />
       </Canvas>
 

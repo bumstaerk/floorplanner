@@ -9,6 +9,28 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { useThemeStore } from "./store/useThemeStore";
+import { useEffect } from "react";
+
+/**
+ * Ensures the `dark` class is applied to `<html>` on the first client render.
+ * The store constructor already calls `applyThemeClass`, but this component
+ * guarantees the class stays in sync if the store is somehow re-created.
+ */
+function ThemeInitializer() {
+  const theme = useThemeStore((s) => s.theme);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [theme]);
+
+  return null;
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +47,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,7 +64,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <ThemeInitializer />
+      <Outlet />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Line } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 /**
  * Renders the in-progress wall line while the user is actively drawing.
@@ -20,10 +21,9 @@ export function DrawingLine() {
   const drawingCursor = useFloorplanStore((s) => s.drawingCursor);
   const corners = useFloorplanStore((s) => s.corners);
   const snap = useFloorplanStore((s) => s.snap);
+  const colors = useThemeColors();
 
-  const startCorner = drawingFromCornerId
-    ? corners[drawingFromCornerId]
-    : null;
+  const startCorner = drawingFromCornerId ? corners[drawingFromCornerId] : null;
 
   const lineData = useMemo(() => {
     if (!startCorner || !drawingCursor) return null;
@@ -59,7 +59,9 @@ export function DrawingLine() {
 
     const snappedDx = snappedEnd.x - start.x;
     const snappedDy = snappedEnd.y - start.y;
-    const snappedLength = Math.sqrt(snappedDx * snappedDx + snappedDy * snappedDy);
+    const snappedLength = Math.sqrt(
+      snappedDx * snappedDx + snappedDy * snappedDy,
+    );
 
     // Normal direction for label offset
     const dirX = snappedLength > 0 ? snappedDx / snappedLength : 0;
@@ -101,7 +103,7 @@ export function DrawingLine() {
       {/* Main drawing line (dashed) */}
       <Line
         points={linePoints}
-        color="#f59e0b"
+        color={colors.drawingLine}
         lineWidth={2}
         dashed
         dashSize={0.15}
@@ -116,7 +118,7 @@ export function DrawingLine() {
       >
         <circleGeometry args={[0.06, 16]} />
         <meshBasicMaterial
-          color="#f59e0b"
+          color={colors.drawingCursorFill}
           transparent
           opacity={0.8}
           depthWrite={false}
@@ -129,7 +131,7 @@ export function DrawingLine() {
       >
         <ringGeometry args={[0.06, 0.08, 16]} />
         <meshBasicMaterial
-          color="#d97706"
+          color={colors.drawingCursorRing}
           transparent
           opacity={1}
           depthWrite={false}
@@ -150,7 +152,7 @@ export function DrawingLine() {
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[labelText.length * 0.08 + 0.12, 0.18]} />
             <meshBasicMaterial
-              color="#1e293b"
+              color={colors.drawingLabelBg}
               transparent
               opacity={0.85}
               depthWrite={false}
