@@ -153,6 +153,7 @@ openspec/         # AI-driven change management specs
 - Return `Response.json(...)` with appropriate status codes.
 - Check HTTP method explicitly with `405` response for unsupported methods.
 - Use Drizzle query builder API (not relational API) with `.get()` for single rows, `.all()` for arrays.
+- When working on routes, loaders, actions, or React Router conventions, load the `react-router-framework-mode` skill for detailed reference.
 
 ### Database
 
