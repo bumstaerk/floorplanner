@@ -351,6 +351,28 @@ function BuildKeyboardHandler() {
         return;
       }
 
+      // Arrow keys: move selected corner
+      if (
+        state.selectedCornerId &&
+        (e.key === "ArrowUp" ||
+          e.key === "ArrowDown" ||
+          e.key === "ArrowLeft" ||
+          e.key === "ArrowRight")
+      ) {
+        e.preventDefault();
+        const corner = state.corners[state.selectedCornerId];
+        if (!corner) return;
+        const step = e.shiftKey ? 0.05 : 0.1;
+        let { x, y } = corner.position;
+        if (e.key === "ArrowUp") y -= step;
+        if (e.key === "ArrowDown") y += step;
+        if (e.key === "ArrowLeft") x -= step;
+        if (e.key === "ArrowRight") x += step;
+        state.pushHistory();
+        state.moveCorner(state.selectedCornerId, { x, y });
+        return;
+      }
+
       // Tool shortcuts
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.key === "v" || e.key === "V") {
