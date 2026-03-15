@@ -6,6 +6,7 @@ import type {
     WallSegment,
     WallOpening,
     WallComponent,
+    RoomComponent,
     FloorplanImage,
     StaircaseOpening,
     Floor,
@@ -262,6 +263,61 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             selectedWallId: null,
             selectedCornerId: null,
             selectedStaircaseId: null,
+        }),
+
+    // ── Actions: room components ──────────────────────────────────────────────
+
+    addRoomComponent: (roomId, component) =>
+        set((s) => {
+            const room = s.rooms[roomId];
+            if (!room) return s;
+            const newComponent: RoomComponent = {
+                id: uuid(),
+                ...component,
+            };
+            return {
+                rooms: {
+                    ...s.rooms,
+                    [roomId]: {
+                        ...room,
+                        components: [...room.components, newComponent],
+                    },
+                },
+            };
+        }),
+
+    removeRoomComponent: (roomId, componentId) =>
+        set((s) => {
+            const room = s.rooms[roomId];
+            if (!room) return s;
+            return {
+                rooms: {
+                    ...s.rooms,
+                    [roomId]: {
+                        ...room,
+                        components: room.components.filter(
+                            (c) => c.id !== componentId,
+                        ),
+                    },
+                },
+            };
+        }),
+
+    updateRoomComponent: (roomId, componentId, patch) =>
+        set((s) => {
+            const room = s.rooms[roomId];
+            if (!room) return s;
+            return {
+                rooms: {
+                    ...s.rooms,
+                    [roomId]: {
+                        ...room,
+                        components: room.components.map((c) =>
+                            c.id === componentId ? { ...c, ...patch } : c,
+                        ),
+                    },
+                },
+            };
         }),
 
     // ── Actions: mode / tool ──────────────────────────────────────────────────
@@ -874,6 +930,19 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     walls: state.walls,
                     floorplan: floorplanPayload,
                     staircaseOpenings: state.staircaseOpenings,
+                    roomComponents: Object.values(state.rooms).flatMap((room) => {
+                        const roomKey = [...room.cornerIds].sort().join(",");
+                        return room.components.map((comp) => ({
+                            id: comp.id,
+                            floorId: room.floorId,
+                            roomKey,
+                            type: comp.type,
+                            label: comp.label,
+                            x: comp.x,
+                            y: comp.y,
+                            meta: comp.meta,
+                        }));
+                    }),
                 }),
             });
             if (!res.ok) throw new Error("Save failed");
@@ -985,9 +1054,34 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             historyIndex: -1,
             loading: false,
         });
-        // Trigger room detection after hydrating
+        // Trigger room detection after hydrating, then attach persisted room components
         queueMicrotask(() => {
-            useFloorplanStore.getState().detectRooms();
+            const store = useFloorplanStore.getState();
+            store.detectRooms();
+
+            // Attach persisted room components by polygon hash
+            const loadedRoomComponents = data.roomComponents;
+            if (loadedRoomComponents && loadedRoomComponents.length > 0) {
+                const currentRooms = useFloorplanStore.getState().rooms;
+                const updatedRooms = { ...currentRooms };
+                // Build lookup: roomKey → components
+                const componentsByKey: Record<string, typeof loadedRoomComponents> = {};
+                for (const rc of loadedRoomComponents) {
+                    if (!componentsByKey[rc.roomKey]) componentsByKey[rc.roomKey] = [];
+                    componentsByKey[rc.roomKey].push(rc);
+                }
+                for (const room of Object.values(updatedRooms)) {
+                    const key = [...room.cornerIds].sort().join(",");
+                    const matched = componentsByKey[key];
+                    if (matched) {
+                        updatedRooms[room.id] = {
+                            ...room,
+                            components: matched.map((rc) => rc.component),
+                        };
+                    }
+                }
+                set({ rooms: updatedRooms });
+            }
         });
     },
 

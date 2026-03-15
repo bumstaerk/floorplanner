@@ -80,6 +80,12 @@ export interface ThemeColors {
     wall3dWindowFrame: string;
     wall3dDoorFrame: string;
 
+    // ── Components (wall + room) ──
+    componentLight: string;
+    componentSensor: string;
+    componentOutlet: string;
+    componentSwitch: string;
+
     // ── Preview scene ──
     groundPlane: string;
     floorPlate: string;
@@ -166,6 +172,12 @@ const darkColors: ThemeColors = {
     wall3dWindowFrame: "#5a7a9a",
     wall3dDoorFrame: "#8b6f47",
 
+    // Components (wall + room)
+    componentLight: "#fbbf24",
+    componentSensor: "#22d3ee",
+    componentOutlet: "#4ade80",
+    componentSwitch: "#fb923c",
+
     // Preview scene
     groundPlane: "#1a1a2e",
     floorPlate: "#475569",
@@ -251,6 +263,12 @@ const lightColors: ThemeColors = {
     wall3dGlass: "#7dd3fc",
     wall3dWindowFrame: "#4b6a80",
     wall3dDoorFrame: "#78603c",
+
+    // Components (wall + room)
+    componentLight: "#d97706",
+    componentSensor: "#0891b2",
+    componentOutlet: "#16a34a",
+    componentSwitch: "#ea580c",
 
     // Preview scene
     groundPlane: "#e2e8f0",

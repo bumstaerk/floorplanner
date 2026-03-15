@@ -6,6 +6,7 @@ import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { computeWallGeometry } from "./wallGeometryUtils";
 import { Opening2D } from "./Opening2D";
+import { Component2D } from "./Component2D";
 
 interface Wall2DProps {
   wallId: string;
@@ -290,6 +291,18 @@ export function Wall2D({ wallId }: Wall2DProps) {
             wallThickness={thickness}
             wallLength={length}
             isWallSelected={isSelected}
+          />
+        ))}
+
+      {/* Wall components (lights, sensors, outlets, switches) — skip for invisible walls */}
+      {wall &&
+        !isInvisible &&
+        wall.components.map((comp) => (
+          <Component2D
+            key={comp.id}
+            component={comp}
+            geometry={geometry}
+            colors={colors}
           />
         ))}
     </group>

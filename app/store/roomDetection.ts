@@ -336,6 +336,7 @@ function detectRoomsForFloor(
 
         const roomId = existing?.id ?? uuid();
         const roomName = existing?.name ?? "Room";
+        const roomComponents = existing?.components ?? [];
 
         rooms[roomId] = {
             id: roomId,
@@ -345,6 +346,7 @@ function detectRoomsForFloor(
             wallIds,
             center,
             area,
+            components: roomComponents,
         };
     }
 

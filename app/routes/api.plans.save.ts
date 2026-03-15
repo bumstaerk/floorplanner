@@ -18,6 +18,7 @@ export async function action({ request }: Route.ActionArgs) {
             walls,
             floorplan,
             staircaseOpenings,
+            roomComponents,
             defaultWallThickness,
             defaultWallHeight,
         } = body;
@@ -214,6 +215,33 @@ export async function action({ request }: Route.ActionArgs) {
                     width: staircase.width,
                     depth: staircase.depth,
                     rotation: staircase.rotation,
+                })
+                .run();
+        }
+
+        // Insert room components
+        const roomComponentEntries = (roomComponents || []) as Array<{
+            id: string;
+            floorId: string;
+            roomKey: string;
+            type: string;
+            label: string;
+            x: number;
+            y: number;
+            meta?: Record<string, unknown>;
+        }>;
+        for (const rc of roomComponentEntries) {
+            db.insert(schema.roomComponents)
+                .values({
+                    id: rc.id,
+                    planId,
+                    floorId: rc.floorId,
+                    roomKey: rc.roomKey,
+                    type: rc.type,
+                    label: rc.label,
+                    x: rc.x,
+                    y: rc.y,
+                    meta: rc.meta ? JSON.stringify(rc.meta) : null,
                 })
                 .run();
         }

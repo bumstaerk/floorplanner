@@ -4,6 +4,7 @@ import { type ThreeEvent } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { RoomComponent2D } from "./RoomComponent2D";
 
 interface Room2DProps {
   roomId: string;
@@ -136,6 +137,11 @@ export function Room2D({ roomId }: Room2DProps) {
       >
         {areaLabel}
       </Text>
+
+      {/* Room ceiling components */}
+      {room.components.map((comp) => (
+        <RoomComponent2D key={comp.id} component={comp} colors={colors} />
+      ))}
     </group>
   );
 }

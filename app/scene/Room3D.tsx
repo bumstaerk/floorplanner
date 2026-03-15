@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { RoomComponent3D } from "./RoomComponent3D";
 
 interface Room3DProps {
   roomId: string;
@@ -23,6 +24,7 @@ interface Room3DProps {
 export function Room3D({ roomId }: Room3DProps) {
   const room = useFloorplanStore((s) => s.rooms[roomId]);
   const corners = useFloorplanStore((s) => s.corners);
+  const defaultWallHeight = useFloorplanStore((s) => s.defaultWallHeight);
   const colors = useThemeColors();
 
   // Build the filled room polygon geometry directly in XZ world-space.
@@ -113,6 +115,16 @@ export function Room3D({ roomId }: Room3DProps) {
       >
         {areaLabel}
       </Text>
+
+      {/* Room ceiling components */}
+      {room.components.map((comp) => (
+        <RoomComponent3D
+          key={comp.id}
+          component={comp}
+          ceilingHeight={defaultWallHeight}
+          colors={colors}
+        />
+      ))}
     </group>
   );
 }

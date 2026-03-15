@@ -128,3 +128,23 @@ export const staircaseOpenings = sqliteTable("staircase_openings", {
     depth: real("depth").notNull().default(2.5),
     rotation: real("rotation").notNull().default(0),
 });
+
+// ---------------------------------------------------------------------------
+// 8. Room Components — components attached to room ceilings
+// ---------------------------------------------------------------------------
+export const roomComponents = sqliteTable("room_components", {
+    id: text("id").primaryKey(),
+    planId: text("plan_id")
+        .notNull()
+        .references(() => plans.id, { onDelete: "cascade" }),
+    floorId: text("floor_id")
+        .notNull()
+        .references(() => floors.id, { onDelete: "cascade" }),
+    /** Sorted corner IDs of the room polygon, used as a stable key */
+    roomKey: text("room_key").notNull(),
+    type: text("type").notNull(), // "light" | "sensor"
+    label: text("label").notNull(),
+    x: real("x").notNull(),
+    y: real("y").notNull(),
+    meta: text("meta"), // nullable JSON string
+});

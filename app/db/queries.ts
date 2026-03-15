@@ -1,7 +1,17 @@
 import { db } from "~/db";
 import * as schema from "~/db/schema";
 import { eq, desc } from "drizzle-orm";
-import type { CornerNode, WallSegment, FloorplanImage, Floor, StaircaseOpening } from "~/store/types";
+import type { CornerNode, WallSegment, FloorplanImage, Floor, StaircaseOpening, RoomComponent } from "~/store/types";
+
+/**
+ * A persisted room component with the polygon hash key for re-attachment.
+ */
+export interface PersistedRoomComponent {
+    /** Sorted corner IDs of the room polygon */
+    roomKey: string;
+    floorId: string;
+    component: RoomComponent;
+}
 
 export interface LoadedPlan {
     id: string;
@@ -15,6 +25,7 @@ export interface LoadedPlan {
     walls: Record<string, WallSegment>;
     floorplan: FloorplanImage | null;
     staircaseOpenings: Record<string, StaircaseOpening>;
+    roomComponents: PersistedRoomComponent[];
 }
 
 /**
@@ -168,6 +179,25 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         }
     }
 
+    // Load room components
+    const roomComponentRows = db
+        .select()
+        .from(schema.roomComponents)
+        .where(eq(schema.roomComponents.planId, planId))
+        .all();
+    const roomComponents: PersistedRoomComponent[] = roomComponentRows.map((row) => ({
+        roomKey: row.roomKey,
+        floorId: row.floorId,
+        component: {
+            id: row.id,
+            type: row.type as "light" | "sensor",
+            label: row.label,
+            x: row.x,
+            y: row.y,
+            meta: row.meta ? JSON.parse(row.meta) : undefined,
+        },
+    }));
+
     return {
         id: plan.id,
         name: plan.name,
@@ -180,6 +210,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         walls,
         floorplan,
         staircaseOpenings,
+        roomComponents,
     };
 }
 

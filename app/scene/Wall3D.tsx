@@ -4,6 +4,7 @@ import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { computeWallGeometry } from "./wallGeometryUtils";
 import type { WallOpening } from "../store/types";
+import { Component3D } from "./Component3D";
 
 interface Wall3DProps {
   wallId: string;
@@ -545,6 +546,16 @@ export function Wall3D({ wallId }: Wall3DProps) {
             <lineBasicMaterial color={colors.wall3dDoorFrame} linewidth={1} />
           </line>
         </group>
+      ))}
+
+      {/* ── Wall components (lights, sensors, outlets, switches) ──────── */}
+      {wall.components.map((comp) => (
+        <Component3D
+          key={comp.id}
+          component={comp}
+          geometry={computed}
+          colors={colors}
+        />
       ))}
     </group>
   );

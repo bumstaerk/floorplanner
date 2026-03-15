@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useShallow } from "zustand/react/shallow";
-import type { WallOpening, FloorplanImage } from "../store/types";
+import type { WallOpening, WallComponent, RoomComponent, FloorplanImage } from "../store/types";
 
 /**
  * Properties panel on the right side of the editor.
@@ -59,6 +59,14 @@ function RoomProperties({ roomId }: { roomId: string }) {
     const updateRoom = useFloorplanStore((s) => s.updateRoom);
     const selectRoom = useFloorplanStore((s) => s.selectRoom);
     const selectWall = useFloorplanStore((s) => s.selectWall);
+    const addRoomComponent = useFloorplanStore((s) => s.addRoomComponent);
+    const removeRoomComponent = useFloorplanStore(
+        (s) => s.removeRoomComponent,
+    );
+    const updateRoomComponent = useFloorplanStore(
+        (s) => s.updateRoomComponent,
+    );
+    const pushHistory = useFloorplanStore((s) => s.pushHistory);
     const [editingName, setEditingName] = useState(false);
     const [nameValue, setNameValue] = useState(room?.name ?? "");
 
@@ -79,6 +87,47 @@ function RoomProperties({ roomId }: { roomId: string }) {
             }
         },
         [handleNameSubmit, room?.name],
+    );
+
+    const handleAddCeilingLight = useCallback(() => {
+        if (!room) return;
+        pushHistory();
+        addRoomComponent(roomId, {
+            type: "light",
+            label: "Ceiling Light",
+            x: room.center.x,
+            y: room.center.y,
+        });
+    }, [roomId, room, addRoomComponent, pushHistory]);
+
+    const handleAddCeilingSensor = useCallback(() => {
+        if (!room) return;
+        pushHistory();
+        addRoomComponent(roomId, {
+            type: "sensor",
+            label: "Ceiling Sensor",
+            x: room.center.x,
+            y: room.center.y,
+        });
+    }, [roomId, room, addRoomComponent, pushHistory]);
+
+    const handleRemoveRoomComponent = useCallback(
+        (componentId: string) => {
+            pushHistory();
+            removeRoomComponent(roomId, componentId);
+        },
+        [roomId, removeRoomComponent, pushHistory],
+    );
+
+    const handleUpdateRoomComponent = useCallback(
+        (
+            componentId: string,
+            patch: Partial<Omit<RoomComponent, "id">>,
+        ) => {
+            pushHistory();
+            updateRoomComponent(roomId, componentId, patch);
+        },
+        [roomId, updateRoomComponent, pushHistory],
     );
 
     if (!room) return null;
@@ -191,6 +240,95 @@ function RoomProperties({ roomId }: { roomId: string }) {
                     })}
                 </div>
             </div>
+
+            {/* Ceiling Components */}
+            <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs text-gray-400">
+                        Ceiling Components ({room.components.length})
+                    </label>
+                    <div className="flex gap-1">
+                        <SmallButton
+                            onClick={handleAddCeilingLight}
+                            title="Add ceiling light"
+                        >
+                            💡
+                        </SmallButton>
+                        <SmallButton
+                            onClick={handleAddCeilingSensor}
+                            title="Add ceiling sensor"
+                        >
+                            📡
+                        </SmallButton>
+                    </div>
+                </div>
+
+                {room.components.length === 0 && (
+                    <p className="text-xs text-gray-500 italic">
+                        No ceiling components
+                    </p>
+                )}
+
+                {room.components.map((comp) => (
+                    <div
+                        key={comp.id}
+                        className="bg-gray-700/30 rounded-lg p-2.5 space-y-2 mt-1"
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-200 capitalize">
+                                {getComponentIcon(comp.type)} {comp.label}
+                            </span>
+                            <button
+                                onClick={() =>
+                                    handleRemoveRoomComponent(comp.id)
+                                }
+                                className="text-gray-500 hover:text-red-400 transition-colors"
+                                title="Remove component"
+                            >
+                                <svg
+                                    className="w-3.5 h-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <NumberInput
+                                label="X"
+                                value={comp.x}
+                                onChange={(v) =>
+                                    handleUpdateRoomComponent(comp.id, {
+                                        x: v,
+                                    })
+                                }
+                                unit="m"
+                                step={0.05}
+                                compact
+                            />
+                            <NumberInput
+                                label="Y"
+                                value={comp.y}
+                                onChange={(v) =>
+                                    handleUpdateRoomComponent(comp.id, {
+                                        y: v,
+                                    })
+                                }
+                                unit="m"
+                                step={0.05}
+                                compact
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -223,6 +361,7 @@ function WallProperties({ wallId }: { wallId: string }) {
     const updateOpening = useFloorplanStore((s) => s.updateOpening);
     const addComponent = useFloorplanStore((s) => s.addComponent);
     const removeComponent = useFloorplanStore((s) => s.removeComponent);
+    const updateComponent = useFloorplanStore((s) => s.updateComponent);
     const pushHistory = useFloorplanStore((s) => s.pushHistory);
     const selectWall = useFloorplanStore((s) => s.selectWall);
 
@@ -381,6 +520,14 @@ function WallProperties({ wallId }: { wallId: string }) {
             face: "left",
         });
     }, [wallId, addComponent, pushHistory]);
+
+    const handleUpdateComponent = useCallback(
+        (componentId: string, patch: Partial<Omit<WallComponent, "id">>) => {
+            pushHistory();
+            updateComponent(wallId, componentId, patch);
+        },
+        [wallId, updateComponent, pushHistory],
+    );
 
     const handleRemoveComponent = useCallback(
         (componentId: string) => {
@@ -637,17 +784,51 @@ function WallProperties({ wallId }: { wallId: string }) {
                             </button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <ReadonlyField
+                            <NumberInput
                                 label="Offset"
-                                value={`${comp.offset.toFixed(2)}m`}
+                                value={comp.offset}
+                                onChange={(v) =>
+                                    handleUpdateComponent(comp.id, { offset: v })
+                                }
+                                unit="m"
+                                min={0}
+                                max={length}
+                                step={0.05}
+                                compact
                             />
-                            <ReadonlyField
+                            <NumberInput
                                 label="Elevation"
-                                value={`${comp.elevation.toFixed(2)}m`}
+                                value={comp.elevation}
+                                onChange={(v) =>
+                                    handleUpdateComponent(comp.id, {
+                                        elevation: v,
+                                    })
+                                }
+                                unit="m"
+                                min={0}
+                                max={resolvedHeight}
+                                step={0.05}
+                                compact
                             />
                         </div>
-                        <div className="text-[10px] text-gray-500">
-                            Face: {comp.face}
+                        <div className="flex items-center gap-2">
+                            <label className="text-[10px] text-gray-500">
+                                Face:
+                            </label>
+                            <select
+                                value={comp.face}
+                                onChange={(e) =>
+                                    handleUpdateComponent(comp.id, {
+                                        face: e.target.value as
+                                            | "left"
+                                            | "right",
+                                    })
+                                }
+                                className="text-[10px] bg-gray-700 text-gray-300 rounded px-1.5 py-0.5 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                            >
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
                         </div>
                     </div>
                 ))}

@@ -115,6 +115,23 @@ export interface StaircaseOpening {
 // ─── Rooms ─────────────────────────────────────────────────────────────────────
 
 /**
+ * A component attached to a room's ceiling (light, sensor).
+ * Position is given in world coordinates (x, y) within the room polygon.
+ */
+export interface RoomComponent {
+  id: string;
+  /** Component type — only "light" and "sensor" are valid for ceiling components */
+  type: "light" | "sensor";
+  label: string;
+  /** World X coordinate within the room */
+  x: number;
+  /** World Y coordinate within the room */
+  y: number;
+  /** Arbitrary metadata for the component type */
+  meta?: Record<string, unknown>;
+}
+
+/**
  * A room is a closed polygon formed by a cycle of walls/corners.
  * Detected automatically when walls form a closed loop.
  */
@@ -132,6 +149,8 @@ export interface Room {
   center: Point2D;
   /** Area of the room in square meters */
   area: number;
+  /** Components attached to the room's ceiling */
+  components: RoomComponent[];
 }
 
 // ─── Corner nodes ──────────────────────────────────────────────────────────────
@@ -270,6 +289,21 @@ export interface FloorplanState {
   /** Select a room by ID */
   selectRoom: (id: string | null) => void;
 
+  // ── Actions: room components ──
+  /** Add a ceiling component to a room, defaults position to room centroid */
+  addRoomComponent: (
+    roomId: string,
+    component: Omit<RoomComponent, "id">,
+  ) => void;
+  /** Remove a ceiling component from a room */
+  removeRoomComponent: (roomId: string, componentId: string) => void;
+  /** Update a ceiling component's properties */
+  updateRoomComponent: (
+    roomId: string,
+    componentId: string,
+    patch: Partial<Omit<RoomComponent, "id">>,
+  ) => void;
+
   // ── Actions: floorplan image ──
   setFloorplan: (image: FloorplanImage) => void;
   updateFloorplan: (patch: Partial<FloorplanImage>) => void;
@@ -372,6 +406,11 @@ export interface FloorplanState {
     walls: Record<string, WallSegment>;
     floorplan: FloorplanImage | null;
     staircaseOpenings: Record<string, StaircaseOpening>;
+    roomComponents?: Array<{
+      roomKey: string;
+      floorId: string;
+      component: RoomComponent;
+    }>;
   }) => void;
   /** Reset the editor to a blank state */
   newPlan: () => void;
