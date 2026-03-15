@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import type { Route } from "./+types/home";
 import { Canvas, useThree } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { BuildScene } from "../scene/BuildScene";
 import { PreviewScene } from "../scene/PreviewScene";
@@ -51,6 +52,31 @@ function ClearColorSync() {
 }
 
 /**
+ * Eagerly preloads the default troika-three-text font used by drei's <Text>.
+ *
+ * drei's Text component internally calls `suspend()` from suspend-react to
+ * preload the font on first render.  If no <Suspense> boundary exists (or if
+ * the boundary blanks the whole scene) this causes a visible flash / reload.
+ *
+ * By rendering a hidden <Text> inside its own <Suspense> boundary at Canvas
+ * mount time, the font is fetched and cached *before* any Wall2D / Room2D
+ * <Text> ever mounts.  Subsequent <Text> instances find the cache entry
+ * already resolved and never suspend.
+ *
+ * The component renders a single space character at an invisible position so
+ * it has no visual impact.
+ */
+function FontPreloader() {
+  return (
+    <Suspense fallback={null}>
+      <Text position={[0, -9999, 0]} fontSize={0.01} visible={false}>
+        {" "}
+      </Text>
+    </Suspense>
+  );
+}
+
+/**
  * Hydrate the zustand store with the most recently saved plan from the
  * server-side loader.  Runs exactly once on the first client mount — the
  * ref guard ensures we never re-hydrate when React re-renders.
@@ -86,6 +112,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         }}
       >
         <ClearColorSync />
+        {/* Preload the troika font so <Text> in Wall2D / Room2D never suspends */}
+        <FontPreloader />
         <Scene />
       </Canvas>
 
