@@ -1,6 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { useFloorplanStore } from "../store/useFloorplanStore";
+import {
+  useSectionFocusStore,
+  getFocusedFloorId,
+} from "../store/useSectionFocusStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useViewerTheme } from "../hooks/useViewerThemeColors";
 import { computeWallGeometry } from "./wallGeometryUtils";
@@ -398,6 +403,66 @@ export function Wall3D({ wallId }: Wall3DProps) {
       });
   }, [computed, wall]);
 
+  // ── Section focus: opacity & camera-facing transparency ───────────────────
+
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame(({ camera }) => {
+    if (!groupRef.current || !wall) return;
+
+    const focusState = useSectionFocusStore.getState();
+    const focused = getFocusedFloorId(focusState);
+
+    // Compute floor opacity factor
+    let targetBase: number;
+    if (focused === null) {
+      targetBase = 1;
+    } else if (wall.floorId === focused) {
+      // This wall's floor is focused — check if it faces the camera
+      targetBase = 1;
+      if (computed) {
+        const nx = computed.normX;
+        const nz = computed.normY; // 2D Y → 3D Z
+        const mx = computed.mid.x;
+        const mz = computed.mid.y;
+
+        const dx = camera.position.x - mx;
+        const dz = camera.position.z - mz;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        if (len > 0) {
+          const dot = Math.abs(nx * (dx / len) + nz * (dz / len));
+          if (dot > 0.3) {
+            targetBase = 0.15;
+          }
+        }
+      }
+    } else {
+      targetBase = 0.25;
+    }
+
+    // Apply to all materials in the wall group
+    groupRef.current.traverse((child) => {
+      if (
+        child instanceof THREE.Mesh ||
+        child instanceof THREE.Line ||
+        child instanceof THREE.LineSegments
+      ) {
+        const mats = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        for (const mat of mats) {
+          if ((mat as any)._initOp === undefined) {
+            (mat as any)._initOp = mat.opacity;
+          }
+          const initOp = (mat as any)._initOp as number;
+          const target = initOp * targetBase;
+          mat.opacity = THREE.MathUtils.lerp(mat.opacity, target, 0.1);
+          mat.transparent = true;
+        }
+      }
+    });
+  });
+
   // ── All hooks above this line ──────────────────────────────────────────────
 
   const colors = useThemeColors();
@@ -409,7 +474,7 @@ export function Wall3D({ wallId }: Wall3DProps) {
   if (!computed || !wallGeometry) return null;
 
   return (
-    <group>
+    <group ref={groupRef}>
       {/* Main wall mesh — already in world space */}
       <mesh geometry={wallGeometry} castShadow receiveShadow>
         <meshStandardMaterial
@@ -417,6 +482,7 @@ export function Wall3D({ wallId }: Wall3DProps) {
           roughness={0.92}
           metalness={0.02}
           side={THREE.DoubleSide}
+          transparent
         />
       </mesh>
 

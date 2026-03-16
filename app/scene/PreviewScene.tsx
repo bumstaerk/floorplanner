@@ -1,17 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
   OrbitControls,
   PerspectiveCamera,
   ContactShadows,
 } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { useShallow } from "zustand/react/shallow";
 import * as THREE from "three";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useTimeOfDayStore } from "../store/useTimeOfDayStore";
+import {
+  useSectionFocusStore,
+  getFocusedFloorId,
+} from "../store/useSectionFocusStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { FloorplanPlane } from "./FloorplanPlane";
 import { Wall3D } from "./Wall3D";
 import { Room3D } from "./Room3D";
+import { FloorGroup3D } from "./FloorGroup3D";
 import { DayNightLighting } from "./DayNightLighting";
 import type { Floor } from "../store/types";
 
@@ -56,6 +62,7 @@ function PreviewGrid() {
 
 /**
  * A thin horizontal slab between floors.
+ * Supports section-focus opacity animation.
  */
 function FloorPlate3D({
   yOffset,
@@ -63,14 +70,30 @@ function FloorPlate3D({
   depth,
   centerX,
   centerZ,
+  floorId,
 }: {
   yOffset: number;
   width: number;
   depth: number;
   centerX: number;
   centerZ: number;
+  floorId: string;
 }) {
   const colors = useThemeColors();
+  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+
+  useFrame(() => {
+    if (!matRef.current) return;
+    const focusState = useSectionFocusStore.getState();
+    const focused = getFocusedFloorId(focusState);
+    const target = focused === null ? 1 : floorId === focused ? 1 : 0.25;
+    matRef.current.opacity = THREE.MathUtils.lerp(
+      matRef.current.opacity,
+      target,
+      0.1,
+    );
+  });
+
   return (
     <mesh
       position={[centerX, yOffset, centerZ]}
@@ -80,10 +103,12 @@ function FloorPlate3D({
     >
       <planeGeometry args={[width + 0.4, depth + 0.4]} />
       <meshStandardMaterial
+        ref={matRef}
         color={colors.floorPlate}
         roughness={0.9}
         metalness={0.05}
         side={THREE.DoubleSide}
+        transparent
       />
     </mesh>
   );
@@ -271,14 +296,19 @@ export function PreviewScene() {
       {/* Floorplan image on the ground */}
       <FloorplanPlane />
 
-      {/* Render each floor with Y-offset */}
+      {/* Render each floor with Y-offset, wrapped in animated focus groups */}
       {sortedFloors.map((floor, i) => {
         const yOffset = floorOffsets.get(floor.id) ?? 0;
         const floorWallIds = wallsByFloor[floor.id] ?? [];
         const floorRoomIds = roomsByFloor[floor.id] ?? [];
 
         return (
-          <group key={floor.id} position={[0, yOffset, 0]}>
+          <FloorGroup3D
+            key={floor.id}
+            floor={floor}
+            baseYOffset={yOffset}
+            sortedFloors={sortedFloors}
+          >
             {/* Floor plate (not for ground floor) */}
             {i > 0 && (
               <FloorPlate3D
@@ -287,6 +317,7 @@ export function PreviewScene() {
                 depth={bbDepth}
                 centerX={centerX}
                 centerZ={centerZ}
+                floorId={floor.id}
               />
             )}
 
@@ -299,7 +330,7 @@ export function PreviewScene() {
             {floorWallIds.map((id) => (
               <Wall3D key={id} wallId={id} />
             ))}
-          </group>
+          </FloorGroup3D>
         );
       })}
 
