@@ -4,7 +4,7 @@ import * as THREE from "three";
  * Atmospheric lighting parameters computed from a time-of-day value.
  * All colours are hex strings; positions are relative offsets from scene center.
  */
-export interface AtmosphericLighting {
+interface AtmosphericLighting {
   /** Sun direction unit vector (world space, Y-up) */
   sunDirection: THREE.Vector3;
   /** Sun/key directional light intensity */

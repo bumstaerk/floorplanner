@@ -29,6 +29,7 @@ export function Corner2D({ cornerId }: Corner2DProps) {
   const setHoveredCorner = useFloorplanStore((s) => s.setHoveredCorner);
   const startDrawing = useFloorplanStore((s) => s.startDrawing);
   const finishDrawing = useFloorplanStore((s) => s.finishDrawing);
+  const colors = useThemeColors();
 
   const isSelected = selectedCornerId === cornerId;
   const isHovered = hoveredCornerId === cornerId;
@@ -84,8 +85,6 @@ export function Corner2D({ cornerId }: Corner2DProps) {
   );
 
   if (!corner) return null;
-
-  const colors = useThemeColors();
 
   // Determine visual state
   const radius = isHovered || isSelected || isDrawingFrom ? 0.12 : 0.08;

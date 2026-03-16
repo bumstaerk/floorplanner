@@ -1,12 +1,6 @@
 import { create } from "zustand";
 
-/**
- * Interaction state for floor/section focus in the 3D preview.
- *
- * Manages hover and active (click) states for floors, plus a per-frame
- * set of wall IDs that face the camera (updated imperatively from useFrame).
- */
-export interface SectionFocusState {
+interface SectionFocusState {
   hoveredFloorId: string | null;
   activeFloorId: string | null;
   /** Wall IDs whose surface normals face the camera (updated per-frame) */
@@ -50,12 +44,3 @@ export function getFocusedFloorId(state: SectionFocusState): string | null {
   return state.activeFloorId ?? state.hoveredFloorId;
 }
 
-/** Target opacity for a given floor based on current focus state */
-export function getFloorTargetOpacity(
-  floorId: string,
-  state: SectionFocusState,
-): number {
-  const focused = getFocusedFloorId(state);
-  if (focused === null) return 1;
-  return floorId === focused ? 1 : 0.25;
-}
