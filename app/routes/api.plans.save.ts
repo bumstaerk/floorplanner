@@ -21,6 +21,7 @@ export async function action({ request }: Route.ActionArgs) {
             roomComponents,
             defaultWallThickness,
             defaultWallHeight,
+            modelTheme,
         } = body;
         const planId = body.id || uuid();
         const now = Date.now();
@@ -43,6 +44,7 @@ export async function action({ request }: Route.ActionArgs) {
                 name: name || "Untitled Plan",
                 defaultWallThickness: defaultWallThickness ?? 0.4,
                 defaultWallHeight: defaultWallHeight ?? 2.2,
+                modelTheme: modelTheme ? JSON.stringify(modelTheme) : null,
                 createdAt: existing?.createdAt ?? now,
                 updatedAt: now,
             })

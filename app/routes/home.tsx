@@ -8,6 +8,7 @@ import { PreviewScene } from "../scene/PreviewScene";
 import { Toolbar } from "../components/Toolbar";
 import { PropertiesPanel } from "../components/PropertiesPanel";
 import { StatusBar } from "../components/StatusBar";
+import { TimeOfDayControl } from "../components/TimeOfDayControl";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { loadMostRecentPlan, type LoadedPlan } from "~/db/queries";
 
@@ -97,6 +98,7 @@ function useHydrateStore(plan: LoadedPlan | null) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const plan = loaderData.plan as LoadedPlan | null;
+  const mode = useFloorplanStore((s) => s.mode);
 
   useHydrateStore(plan);
 
@@ -121,6 +123,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <Toolbar />
       <PropertiesPanel />
       <StatusBar />
+      {mode === "preview" && <TimeOfDayControl />}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { db } from "~/db";
 import * as schema from "~/db/schema";
 import { eq, desc } from "drizzle-orm";
-import type { CornerNode, WallSegment, FloorplanImage, Floor, StaircaseOpening, RoomComponent } from "~/store/types";
+import type { CornerNode, WallSegment, FloorplanImage, Floor, StaircaseOpening, RoomComponent, ModelTheme } from "~/store/types";
 
 /**
  * A persisted room component with the polygon hash key for re-attachment.
@@ -18,6 +18,7 @@ export interface LoadedPlan {
     name: string;
     defaultWallThickness: number;
     defaultWallHeight: number;
+    modelTheme: ModelTheme | null;
     createdAt: number;
     updatedAt: number;
     floors: Floor[];
@@ -203,6 +204,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         name: plan.name,
         defaultWallThickness: plan.defaultWallThickness,
         defaultWallHeight: plan.defaultWallHeight,
+        modelTheme: plan.modelTheme ? JSON.parse(plan.modelTheme) as ModelTheme : null,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,
         floors,

@@ -12,7 +12,9 @@ import type {
     Floor,
     Point2D,
     HistoryEntry,
+    ModelTheme,
 } from "./types";
+import { defaultModelThemeLight } from "./types";
 import { detectRooms } from "./roomDetection";
 
 const DEFAULT_WALL_THICKNESS = 0.4; // meters
@@ -92,6 +94,9 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     },
     defaultWallThickness: DEFAULT_WALL_THICKNESS,
     defaultWallHeight: DEFAULT_WALL_HEIGHT,
+
+    // ── Model theme ────────────────────────────────────────────────────────────
+    modelTheme: { ...defaultModelThemeLight },
 
     // ── History ───────────────────────────────────────────────────────────────
     history: [],
@@ -773,6 +778,12 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     setDefaultWallThickness: (v) => set(() => ({ defaultWallThickness: v })),
     setDefaultWallHeight: (v) => set(() => ({ defaultWallHeight: v })),
 
+    // ── Actions: model theme ─────────────────────────────────────────────────
+    updateModelTheme: (patch) =>
+        set((s) => ({ modelTheme: { ...s.modelTheme, ...patch } })),
+    resetModelTheme: () =>
+        set(() => ({ modelTheme: { ...defaultModelThemeLight } })),
+
     // ── Actions: history ──────────────────────────────────────────────────────
     pushHistory: () =>
         set((s) => {
@@ -925,6 +936,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     name: planName,
                     defaultWallThickness: state.defaultWallThickness,
                     defaultWallHeight: state.defaultWallHeight,
+                    modelTheme: state.modelTheme,
                     floors: state.floors,
                     corners: state.corners,
                     walls: state.walls,
@@ -992,6 +1004,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                       }
                     : null,
                 staircaseOpenings: data.staircaseOpenings ?? {},
+                modelTheme: data.modelTheme ?? { ...defaultModelThemeLight },
                 selectedWallId: null,
                 selectedCornerId: null,
                 selectedRoomId: null,
@@ -1042,6 +1055,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                   }
                 : null,
             staircaseOpenings: data.staircaseOpenings ?? {},
+            modelTheme: data.modelTheme ?? { ...defaultModelThemeLight },
             selectedWallId: null,
             selectedCornerId: null,
             selectedRoomId: null,
@@ -1110,6 +1124,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             hoveredCornerId: null,
             drawingFromCornerId: null,
             drawingCursor: null,
+            modelTheme: { ...defaultModelThemeLight },
             history: [],
             historyIndex: -1,
             mode: "build",

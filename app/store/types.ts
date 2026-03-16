@@ -30,6 +30,92 @@ export interface WallOpening {
   face: WallFaceSide;
 }
 
+// ─── Light state ──────────────────────────────────────────────────────────────
+
+/** Colour mode for a light component */
+export type LightColorMode = "warmth" | "rgb";
+
+/**
+ * Runtime state for a light component, stored inside the component's `meta`.
+ *
+ * - `on` / `off` toggle
+ * - `brightness` 0–100 %
+ * - `colorMode`:
+ *     - `"warmth"` — non-RGB lights; `colorTemp` ranges 2700–6500 K
+ *     - `"rgb"` — full-colour lights; `rgb` is a hex string like `"#ff8800"`
+ */
+export interface LightState {
+  on: boolean;
+  /** Brightness percentage 0–100 */
+  brightness: number;
+  colorMode: LightColorMode;
+  /** Colour temperature in Kelvin (2700–6500). Only used when colorMode = "warmth". */
+  colorTemp: number;
+  /** Hex RGB colour string. Only used when colorMode = "rgb". */
+  rgb: string;
+}
+
+/** Default light state for newly created light components */
+export const defaultLightState: LightState = {
+  on: true,
+  brightness: 100,
+  colorMode: "warmth",
+  colorTemp: 3000,
+  rgb: "#ffeedd",
+};
+
+/** Extract a LightState from a component's meta, falling back to defaults. */
+export function getLightState(meta?: Record<string, unknown>): LightState {
+  if (!meta?.lightState) return { ...defaultLightState };
+  const ls = meta.lightState as Partial<LightState>;
+  return {
+    on: ls.on ?? defaultLightState.on,
+    brightness: ls.brightness ?? defaultLightState.brightness,
+    colorMode: ls.colorMode ?? defaultLightState.colorMode,
+    colorTemp: ls.colorTemp ?? defaultLightState.colorTemp,
+    rgb: ls.rgb ?? defaultLightState.rgb,
+  };
+}
+
+/**
+ * Convert a colour temperature (2700–6500 K) to an approximate hex colour.
+ * Uses a simplified Planckian locus mapping.
+ */
+export function colorTempToHex(kelvin: number): string {
+  const t = kelvin / 100;
+  let r: number, g: number, b: number;
+
+  // Red
+  if (t <= 66) {
+    r = 255;
+  } else {
+    r = 329.698727446 * Math.pow(t - 60, -0.1332047592);
+    r = Math.max(0, Math.min(255, r));
+  }
+
+  // Green
+  if (t <= 66) {
+    g = 99.4708025861 * Math.log(t) - 161.1195681661;
+  } else {
+    g = 288.1221695283 * Math.pow(t - 60, -0.0755148492);
+  }
+  g = Math.max(0, Math.min(255, g));
+
+  // Blue
+  if (t >= 66) {
+    b = 255;
+  } else if (t <= 19) {
+    b = 0;
+  } else {
+    b = 138.5177312231 * Math.log(t - 10) - 305.0447927307;
+    b = Math.max(0, Math.min(255, b));
+  }
+
+  const toHex = (v: number) =>
+    Math.round(v).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 /**
  * A component attached to a wall face (light, sensor, switch, etc.)
  * Position is given relative to the wall segment.
@@ -182,6 +268,53 @@ export interface FloorplanImage {
   opacity: number;
 }
 
+// ─── Model theme (3D viewer) ────────────────────────────────────────────────────
+
+/**
+ * Customisable colour palette for the 3D model viewer.
+ * Stored per-plan so each plan can have its own look.
+ */
+export interface ModelTheme {
+  /** Wall surface colour */
+  wallColor: string;
+  /** Room floor fill colour */
+  roomFloorColor: string;
+  /** Ground plane colour */
+  groundColor: string;
+  /** Floor plate colour (between multi-storey floors) */
+  floorPlateColor: string;
+  /** Window glass tint */
+  glassColor: string;
+  /** Window frame colour */
+  windowFrameColor: string;
+  /** Door frame colour */
+  doorFrameColor: string;
+  /** Scene background colour */
+  backgroundColor: string;
+}
+
+export const defaultModelThemeLight: ModelTheme = {
+  wallColor: "#e0d6c8",
+  roomFloorColor: "#d8cfc2",
+  groundColor: "#c8bfb0",
+  floorPlateColor: "#d0c8ba",
+  glassColor: "#c8e6ff",
+  windowFrameColor: "#b0b0b0",
+  doorFrameColor: "#a0896a",
+  backgroundColor: "#d8d2c8",
+};
+
+export const defaultModelThemeDark: ModelTheme = {
+  wallColor: "#2a2a2a",
+  roomFloorColor: "#1e1e1e",
+  groundColor: "#141414",
+  floorPlateColor: "#333333",
+  glassColor: "#1a3a5c",
+  windowFrameColor: "#555555",
+  doorFrameColor: "#6b5a3e",
+  backgroundColor: "#0a0a0a",
+};
+
 // ─── Editor state ──────────────────────────────────────────────────────────────
 
 export type EditorMode = "build" | "preview";
@@ -254,6 +387,9 @@ export interface FloorplanState {
   grid: GridSettings;
   defaultWallThickness: number;
   defaultWallHeight: number;
+
+  // ── Model theme ──
+  modelTheme: ModelTheme;
 
   // ── History ──
   history: HistoryEntry[];
@@ -367,6 +503,10 @@ export interface FloorplanState {
   setDefaultWallThickness: (v: number) => void;
   setDefaultWallHeight: (v: number) => void;
 
+  // ── Actions: model theme ──
+  updateModelTheme: (patch: Partial<ModelTheme>) => void;
+  resetModelTheme: () => void;
+
   // ── Actions: history ──
   pushHistory: () => void;
   undo: () => void;
@@ -411,6 +551,7 @@ export interface FloorplanState {
       floorId: string;
       component: RoomComponent;
     }>;
+    modelTheme?: ModelTheme | null;
   }) => void;
   /** Reset the editor to a blank state */
   newPlan: () => void;

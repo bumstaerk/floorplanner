@@ -3,96 +3,29 @@ import {
   OrbitControls,
   PerspectiveCamera,
   ContactShadows,
+  Environment,
 } from "@react-three/drei";
-import { useShallow } from "zustand/react/shallow";
 import * as THREE from "three";
-import { useFloorplanStore } from "../store/useFloorplanStore";
-import { useTimeOfDayStore } from "../store/useTimeOfDayStore";
-import { useThemeColors } from "../hooks/useThemeColors";
-import { FloorplanPlane } from "./FloorplanPlane";
 import { Wall3D } from "./Wall3D";
 import { Room3D } from "./Room3D";
 import { DayNightLighting } from "./DayNightLighting";
-import type { Floor } from "../store/types";
+import { useTimeOfDayStore } from "../store/useTimeOfDayStore";
+import type {
+  CornerNode,
+  WallSegment,
+  Room,
+  Floor,
+  ModelTheme,
+} from "../store/types";
 
-/**
- * A simple ground plane for the 3D preview so walls don't float in a void.
- */
-function GroundPlane() {
-  const colors = useThemeColors();
-  return (
-    <mesh
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -0.01, 0]}
-      receiveShadow
-    >
-      <planeGeometry args={[200, 200]} />
-      <meshStandardMaterial
-        color={colors.groundPlane}
-        roughness={0.95}
-        metalness={0}
-      />
-    </mesh>
-  );
+interface ViewerSceneProps {
+  floors: Floor[];
+  walls: Record<string, WallSegment>;
+  rooms: Record<string, Room>;
+  corners: Record<string, CornerNode>;
+  theme: ModelTheme;
 }
 
-/**
- * Visible grid in the 3D preview for spatial reference.
- */
-function PreviewGrid() {
-  const grid = useFloorplanStore((s) => s.grid);
-  const colors = useThemeColors();
-
-  if (!grid.visible) return null;
-
-  return (
-    <group position={[0, -0.005, 0]}>
-      <gridHelper
-        args={[grid.size, grid.divisions, colors.gridMajor, colors.gridMinor]}
-      />
-    </group>
-  );
-}
-
-/**
- * A thin horizontal slab between floors.
- */
-function FloorPlate3D({
-  yOffset,
-  width,
-  depth,
-  centerX,
-  centerZ,
-}: {
-  yOffset: number;
-  width: number;
-  depth: number;
-  centerX: number;
-  centerZ: number;
-}) {
-  const colors = useThemeColors();
-  return (
-    <mesh
-      position={[centerX, yOffset, centerZ]}
-      rotation={[-Math.PI / 2, 0, 0]}
-      receiveShadow
-      castShadow
-    >
-      <planeGeometry args={[width + 0.4, depth + 0.4]} />
-      <meshStandardMaterial
-        color={colors.floorPlate}
-        roughness={0.9}
-        metalness={0.05}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-/**
- * Compute the Y-offset for each floor based on cumulative floor heights.
- * Floors are sorted by level (ascending). Ground floor starts at Y=0.
- */
 function computeFloorOffsets(floors: Floor[]): Map<string, number> {
   const sorted = [...floors].sort((a, b) => a.level - b.level);
   const offsets = new Map<string, number>();
@@ -104,24 +37,71 @@ function computeFloorOffsets(floors: Floor[]): Map<string, number> {
   return offsets;
 }
 
-/**
- * The 3D preview scene.
- *
- * Renders all floors stacked vertically. Each floor's walls and rooms are
- * wrapped in a group with a Y-offset. Floor plates render between floors.
- */
-export function PreviewScene() {
-  const floors = useFloorplanStore(useShallow((s) => s.floors));
-  const walls = useFloorplanStore(useShallow((s) => s.walls));
-  const rooms = useFloorplanStore(useShallow((s) => s.rooms));
-  const corners = useFloorplanStore(useShallow((s) => s.corners));
-  const colors = useThemeColors();
-  const dayNightEnabled = useTimeOfDayStore((s) => s.enabled);
+function GroundPlane({ color, centerX = 0, centerZ = 0 }: { color: string; centerX?: number; centerZ?: number }) {
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[centerX, -0.005, centerZ]}
+      receiveShadow
+    >
+      <planeGeometry args={[200, 200]} />
+      <meshStandardMaterial color={color} roughness={1} metalness={0} />
+    </mesh>
+  );
+}
 
-  // Compute floor Y-offsets
+function FloorPlate3D({
+  yOffset,
+  width,
+  depth,
+  centerX,
+  centerZ,
+  color,
+}: {
+  yOffset: number;
+  width: number;
+  depth: number;
+  centerX: number;
+  centerZ: number;
+  color: string;
+}) {
+  return (
+    <mesh
+      position={[centerX, yOffset, centerZ]}
+      rotation={[-Math.PI / 2, 0, 0]}
+      receiveShadow
+      castShadow
+    >
+      <planeGeometry args={[width + 0.4, depth + 0.4]} />
+      <meshStandardMaterial
+        color={color}
+        roughness={0.9}
+        metalness={0.05}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+/**
+ * A polished, production-ready 3D scene for the /plan/:id viewer page.
+ *
+ * Differences from PreviewScene:
+ * - No grid, no floorplan image overlay, no selection highlighting
+ * - Softer, more cinematic lighting with environment map
+ * - Uses the plan's ModelTheme for all colours
+ * - Smoother orbit controls with auto-rotate
+ */
+export function ViewerScene({
+  floors,
+  walls,
+  rooms,
+  corners,
+  theme,
+}: ViewerSceneProps) {
+  const dayNightEnabled = useTimeOfDayStore((s) => s.enabled);
   const floorOffsets = useMemo(() => computeFloorOffsets(floors), [floors]);
 
-  // Group wall IDs and room IDs by floor
   const wallsByFloor = useMemo(() => {
     const map: Record<string, string[]> = {};
     for (const f of floors) map[f.id] = [];
@@ -140,7 +120,6 @@ export function PreviewScene() {
     return map;
   }, [rooms, floors]);
 
-  // Compute bounding box across all corners for centering and camera
   const { centerX, centerZ, extent, totalHeight, bbWidth, bbDepth } =
     useMemo(() => {
       const cornerList = Object.values(corners);
@@ -178,7 +157,6 @@ export function PreviewScene() {
         }
       }
 
-      // Total building height
       let th = 0;
       for (const f of floors) th += f.floorHeight;
 
@@ -199,28 +177,30 @@ export function PreviewScene() {
 
   return (
     <>
-      {/* Perspective camera positioned to encompass all floors */}
+      {/* Camera */}
       <PerspectiveCamera
         makeDefault
         position={[
-          centerX + extent * 0.6,
-          totalHeight * 0.5 + extent * 0.4,
-          centerZ + extent * 0.6,
+          centerX + extent * 0.7,
+          totalHeight * 0.5 + extent * 0.5,
+          centerZ + extent * 0.7,
         ]}
-        fov={50}
+        fov={40}
         near={0.1}
         far={1000}
       />
 
-      {/* Full orbit controls for 3D inspection */}
+      {/* Smooth orbit with auto-rotate */}
       <OrbitControls
         target={[centerX, totalHeight / 2, centerZ]}
         enableDamping
-        dampingFactor={0.12}
-        minDistance={1}
-        maxDistance={200}
+        dampingFactor={0.08}
+        minDistance={2}
+        maxDistance={150}
         maxPolarAngle={Math.PI / 2 - 0.05}
         minPolarAngle={0.1}
+        autoRotate
+        autoRotateSpeed={0.3}
       />
 
       {/* Lighting — day/night cycle or static */}
@@ -233,10 +213,10 @@ export function PreviewScene() {
         />
       ) : (
         <>
-          <ambientLight intensity={0.5} />
+          <ambientLight intensity={0.45} />
           <directionalLight
-            position={[centerX + 15, totalHeight + 20, centerZ + 10]}
-            intensity={0.8}
+            position={[centerX + 20, totalHeight + 25, centerZ + 15]}
+            intensity={0.7}
             castShadow
             shadow-mapSize-width={2048}
             shadow-mapSize-height={2048}
@@ -246,32 +226,34 @@ export function PreviewScene() {
             shadow-camera-bottom={-30}
             shadow-camera-near={0.5}
             shadow-camera-far={100}
+            shadow-bias={-0.0001}
           />
           <directionalLight
-            position={[centerX - 10, totalHeight + 15, centerZ - 15]}
-            intensity={0.3}
+            position={[centerX - 15, totalHeight + 10, centerZ - 20]}
+            intensity={0.2}
           />
-          <hemisphereLight
-            args={[colors.hemisphereTop, colors.hemisphereBottom, 0.3]}
+          <directionalLight
+            position={[centerX, totalHeight + 5, centerZ - extent]}
+            intensity={0.1}
           />
+          <hemisphereLight args={["#dde4f0", "#b8a080", 0.25]} />
           <ContactShadows
-            position={[centerX, 0, centerZ]}
-            opacity={0.4}
-            scale={50}
-            blur={2}
-            far={10}
+            position={[centerX, 0.001, centerZ]}
+            opacity={0.6}
+            scale={60}
+            blur={1.0}
+            far={4}
           />
         </>
       )}
 
-      {/* Ground and grid */}
-      <GroundPlane />
-      <PreviewGrid />
+      {/* Subtle environment for reflections only */}
+      <Environment preset="studio" background={false} environmentIntensity={0.15} />
 
-      {/* Floorplan image on the ground */}
-      <FloorplanPlane />
+      {/* Ground */}
+      <GroundPlane color={theme.groundColor} centerX={centerX} centerZ={centerZ} />
 
-      {/* Render each floor with Y-offset */}
+      {/* Render floors */}
       {sortedFloors.map((floor, i) => {
         const yOffset = floorOffsets.get(floor.id) ?? 0;
         const floorWallIds = wallsByFloor[floor.id] ?? [];
@@ -279,7 +261,6 @@ export function PreviewScene() {
 
         return (
           <group key={floor.id} position={[0, yOffset, 0]}>
-            {/* Floor plate (not for ground floor) */}
             {i > 0 && (
               <FloorPlate3D
                 yOffset={0}
@@ -287,15 +268,14 @@ export function PreviewScene() {
                 depth={bbDepth}
                 centerX={centerX}
                 centerZ={centerZ}
+                color={theme.floorPlateColor}
               />
             )}
 
-            {/* Room labels */}
             {floorRoomIds.map((id) => (
               <Room3D key={id} roomId={id} />
             ))}
 
-            {/* Walls */}
             {floorWallIds.map((id) => (
               <Wall3D key={id} wallId={id} />
             ))}
@@ -303,9 +283,9 @@ export function PreviewScene() {
         );
       })}
 
-      {/* Fog — only when day/night cycle is off (DayNightLighting provides its own) */}
+      {/* Fog — only when day/night cycle is off */}
       {!dayNightEnabled && (
-        <fog attach="fog" args={[colors.fog, 50, 200]} />
+        <fog attach="fog" args={[theme.backgroundColor, 60, 250]} />
       )}
     </>
   );

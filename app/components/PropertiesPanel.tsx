@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useShallow } from "zustand/react/shallow";
-import type { WallOpening, WallComponent, RoomComponent, FloorplanImage } from "../store/types";
+import type { WallOpening, WallComponent, RoomComponent, FloorplanImage, ModelTheme } from "../store/types";
+import { defaultModelThemeLight } from "../store/types";
 
 /**
  * Properties panel on the right side of the editor.
@@ -45,6 +46,9 @@ export function PropertiesPanel() {
 
                 {/* Plan Settings — always visible */}
                 <PlanSettings />
+
+                {/* Model Theme — 3D viewer colour customisation */}
+                <ModelThemeEditor />
             </div>
         </div>
     );
@@ -1526,6 +1530,111 @@ function SmallButton({
         >
             {children}
         </button>
+    );
+}
+
+// ─── Color Input ──────────────────────────────────────────────────────────────
+
+function ColorInput({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    onChange: (color: string) => void;
+}) {
+    return (
+        <label className="flex items-center gap-2 group cursor-pointer">
+            <input
+                type="color"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-6 h-6 rounded border border-gray-600/50 bg-transparent cursor-pointer
+                    [&::-webkit-color-swatch-wrapper]:p-0.5
+                    [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-0"
+            />
+            <span className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
+                {label}
+            </span>
+        </label>
+    );
+}
+
+// ─── Model Theme Editor ───────────────────────────────────────────────────────
+
+const THEME_FIELDS: { key: keyof ModelTheme; label: string }[] = [
+    { key: "wallColor", label: "Walls" },
+    { key: "roomFloorColor", label: "Room Floors" },
+    { key: "groundColor", label: "Ground" },
+    { key: "floorPlateColor", label: "Floor Plates" },
+    { key: "glassColor", label: "Glass" },
+    { key: "windowFrameColor", label: "Window Frames" },
+    { key: "doorFrameColor", label: "Door Frames" },
+    { key: "backgroundColor", label: "Background" },
+];
+
+function ModelThemeEditor() {
+    const modelTheme = useFloorplanStore((s) => s.modelTheme);
+    const updateModelTheme = useFloorplanStore((s) => s.updateModelTheme);
+    const resetModelTheme = useFloorplanStore((s) => s.resetModelTheme);
+    const currentPlanId = useFloorplanStore((s) => s.currentPlanId);
+    const [expanded, setExpanded] = useState(false);
+
+    return (
+        <div className="divide-y divide-gray-700/50">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-700/30 transition-colors"
+            >
+                <h3 className="text-sm font-semibold text-white">
+                    3D Theme
+                </h3>
+                <span className="text-xs text-gray-500">
+                    {expanded ? "▲" : "▼"}
+                </span>
+            </button>
+            {expanded && (
+                <div className="px-4 py-3 space-y-3">
+                    <p className="text-[10px] text-gray-500">
+                        Customise the colours of the 3D model. These are used in
+                        the viewer at{" "}
+                        {currentPlanId ? (
+                            <a
+                                href={`/plan/${currentPlanId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-400 hover:underline"
+                            >
+                                /plan/{currentPlanId.slice(0, 8)}...
+                            </a>
+                        ) : (
+                            <span className="text-gray-600">/plan/:id</span>
+                        )}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {THEME_FIELDS.map(({ key, label }) => (
+                            <ColorInput
+                                key={key}
+                                label={label}
+                                value={modelTheme[key]}
+                                onChange={(color) =>
+                                    updateModelTheme({ [key]: color })
+                                }
+                            />
+                        ))}
+                    </div>
+                    <button
+                        onClick={resetModelTheme}
+                        className="w-full text-[11px] text-gray-500 hover:text-gray-300
+                            py-1.5 rounded border border-gray-700/50 hover:border-gray-600/50
+                            transition-colors"
+                    >
+                        Reset to Defaults
+                    </button>
+                </div>
+            )}
+        </div>
     );
 }
 

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useViewerTheme } from "../hooks/useViewerThemeColors";
 import { RoomComponent3D } from "./RoomComponent3D";
 
 interface Room3DProps {
@@ -26,6 +27,7 @@ export function Room3D({ roomId }: Room3DProps) {
   const corners = useFloorplanStore((s) => s.corners);
   const defaultWallHeight = useFloorplanStore((s) => s.defaultWallHeight);
   const colors = useThemeColors();
+  const isViewer = useViewerTheme() !== null;
 
   // Build the filled room polygon geometry directly in XZ world-space.
   const fillGeo = useMemo(() => {
@@ -75,17 +77,26 @@ export function Room3D({ roomId }: Room3DProps) {
 
   return (
     <group>
-      {/* Subtle floor fill for the room area */}
+      {/* Room floor surface */}
       <mesh geometry={fillGeo} receiveShadow>
-        <meshStandardMaterial
-          color={colors.room3dFill}
-          transparent
-          opacity={0.15}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-          roughness={1}
-          metalness={0}
-        />
+        {isViewer ? (
+          <meshStandardMaterial
+            color={colors.room3dFill}
+            side={THREE.DoubleSide}
+            roughness={0.9}
+            metalness={0}
+          />
+        ) : (
+          <meshStandardMaterial
+            color={colors.room3dFill}
+            transparent
+            opacity={0.15}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+            roughness={1}
+            metalness={0}
+          />
+        )}
       </mesh>
 
       {/* Room name label on the floor */}
@@ -123,6 +134,7 @@ export function Room3D({ roomId }: Room3DProps) {
           component={comp}
           ceilingHeight={defaultWallHeight}
           colors={colors}
+          roomId={roomId}
         />
       ))}
     </group>

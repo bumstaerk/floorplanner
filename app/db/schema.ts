@@ -9,6 +9,8 @@ export const plans = sqliteTable("plans", {
     name: text("name").notNull(),
     defaultWallThickness: real("default_wall_thickness").notNull().default(0.4),
     defaultWallHeight: real("default_wall_height").notNull().default(2.2),
+    /** JSON-encoded ModelTheme for the 3D viewer, or null for defaults */
+    modelTheme: text("model_theme"),
     createdAt: integer("created_at")
         .notNull()
         .default(sql`(strftime('%s','now') * 1000)`),

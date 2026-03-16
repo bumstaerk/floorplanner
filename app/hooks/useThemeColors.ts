@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useThemeStore } from "../store/useThemeStore";
+import { useViewerTheme } from "./useViewerThemeColors";
+import type { ModelTheme } from "~/store/types";
 
 export interface ThemeColors {
     // ── Canvas ──
@@ -164,7 +166,7 @@ const darkColors: ThemeColors = {
     staircaseSelected: "#fbbf24",
 
     // Wall 3D
-    wall3dDefault: "#e2e8f0",
+    wall3dDefault: "#e0d8cc",
     wall3dSelected: "#60a5fa",
     wall3dWireframe: "#3b82f6",
     wall3dEdge: "#94a3b8",
@@ -256,7 +258,7 @@ const lightColors: ThemeColors = {
     staircaseSelected: "#d97706",
 
     // Wall 3D
-    wall3dDefault: "#d1d5db",
+    wall3dDefault: "#ddd5c8",
     wall3dSelected: "#60a5fa",
     wall3dWireframe: "#3b82f6",
     wall3dEdge: "#6b7280",
@@ -279,11 +281,38 @@ const lightColors: ThemeColors = {
 };
 
 /**
+ * Apply ModelTheme overrides to the base ThemeColors palette.
+ * Maps ModelTheme keys to the relevant ThemeColors properties.
+ */
+function applyModelTheme(base: ThemeColors, mt: ModelTheme): ThemeColors {
+    return {
+        ...base,
+        wall3dDefault: mt.wallColor,
+        room3dFill: mt.roomFloorColor,
+        groundPlane: mt.groundColor,
+        floorPlate: mt.floorPlateColor,
+        wall3dGlass: mt.glassColor,
+        wall3dWindowFrame: mt.windowFrameColor,
+        wall3dDoorFrame: mt.doorFrameColor,
+        canvasBg: mt.backgroundColor,
+        fog: mt.backgroundColor,
+    };
+}
+
+/**
  * Returns a memoised palette of hex colours for use in R3F scenes,
  * automatically switching between light and dark variants based on
  * the current theme from `useThemeStore`.
+ *
+ * When rendered inside a ViewerThemeContext (the /plan/:id viewer page),
+ * 3D-relevant colours are overridden by the plan's ModelTheme.
  */
 export function useThemeColors(): ThemeColors {
     const theme = useThemeStore((s) => s.theme);
-    return useMemo(() => (theme === "dark" ? darkColors : lightColors), [theme]);
+    const viewerTheme = useViewerTheme();
+    return useMemo(() => {
+        const base = theme === "dark" ? darkColors : lightColors;
+        if (viewerTheme) return applyModelTheme(base, viewerTheme);
+        return base;
+    }, [theme, viewerTheme]);
 }

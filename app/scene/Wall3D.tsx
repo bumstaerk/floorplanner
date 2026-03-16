@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useViewerTheme } from "../hooks/useViewerThemeColors";
 import { computeWallGeometry } from "./wallGeometryUtils";
 import type { WallOpening } from "../store/types";
 import { Component3D } from "./Component3D";
@@ -400,6 +401,7 @@ export function Wall3D({ wallId }: Wall3DProps) {
   // ── All hooks above this line ──────────────────────────────────────────────
 
   const colors = useThemeColors();
+  const isViewer = useViewerTheme() !== null;
 
   // Invisible walls are not rendered in 3D — they only act as room dividers
   if (!wall || wall.visible === false) return null;
@@ -412,14 +414,14 @@ export function Wall3D({ wallId }: Wall3DProps) {
       <mesh geometry={wallGeometry} castShadow receiveShadow>
         <meshStandardMaterial
           color={isSelected ? colors.wall3dSelected : colors.wall3dDefault}
-          roughness={0.85}
-          metalness={0.05}
+          roughness={0.92}
+          metalness={0.02}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Wireframe overlay for selected walls */}
-      {isSelected && (
+      {/* Wireframe overlay for selected walls (hidden in viewer) */}
+      {!isViewer && isSelected && (
         <mesh geometry={wallGeometry}>
           <meshBasicMaterial
             color={colors.wall3dWireframe}
@@ -431,15 +433,17 @@ export function Wall3D({ wallId }: Wall3DProps) {
         </mesh>
       )}
 
-      {/* Edge outline for visual definition */}
-      <lineSegments>
-        <edgesGeometry args={[wallGeometry, 15]} />
-        <lineBasicMaterial
-          color={colors.wall3dEdge}
-          transparent
-          opacity={0.4}
-        />
-      </lineSegments>
+      {/* Edge outline for visual definition (hidden in viewer) */}
+      {!isViewer && (
+        <lineSegments>
+          <edgesGeometry args={[wallGeometry, 15]} />
+          <lineBasicMaterial
+            color={colors.wall3dEdge}
+            transparent
+            opacity={0.4}
+          />
+        </lineSegments>
+      )}
 
       {/* ── Glass panes for windows ──────────────────────────────────────── */}
       {glassPanes.map((pane) => (
@@ -555,6 +559,7 @@ export function Wall3D({ wallId }: Wall3DProps) {
           component={comp}
           geometry={computed}
           colors={colors}
+          wallId={wallId}
         />
       ))}
     </group>
