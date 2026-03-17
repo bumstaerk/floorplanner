@@ -559,6 +559,11 @@ export interface FloorplanState {
       floorId: string;
       component: RoomComponent;
     }>;
+    roomNames?: Array<{
+      roomKey: string;
+      floorId: string;
+      name: string;
+    }>;
     modelTheme?: ModelTheme | null;
   }) => void;
   /** Reset the editor to a blank state */

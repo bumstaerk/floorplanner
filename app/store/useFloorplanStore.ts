@@ -1018,6 +1018,13 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                             meta: comp.meta,
                         }));
                     }),
+                    roomNames: Object.values(state.rooms)
+                        .filter((room) => room.name && room.name !== "Room")
+                        .map((room) => ({
+                            floorId: room.floorId,
+                            roomKey: [...room.cornerIds].sort().join(","),
+                            name: room.name,
+                        })),
                 }),
             });
             if (!res.ok) throw new Error("Save failed");
@@ -1111,29 +1118,46 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             historyIndex: -1,
             loading: false,
         });
-        // Trigger room detection after hydrating, then attach persisted room components
+        // Trigger room detection after hydrating, then attach persisted room components and names
         queueMicrotask(() => {
             const store = useFloorplanStore.getState();
             store.detectRooms();
 
-            // Attach persisted room components by polygon hash
             const loadedRoomComponents = data.roomComponents;
-            if (loadedRoomComponents && loadedRoomComponents.length > 0) {
+            const loadedRoomNames = data.roomNames;
+            const hasComponents = loadedRoomComponents && loadedRoomComponents.length > 0;
+            const hasNames = loadedRoomNames && loadedRoomNames.length > 0;
+
+            if (hasComponents || hasNames) {
                 const currentRooms = useFloorplanStore.getState().rooms;
                 const updatedRooms = { ...currentRooms };
+
                 // Build lookup: roomKey → components
-                const componentsByKey: Record<string, typeof loadedRoomComponents> = {};
-                for (const rc of loadedRoomComponents) {
-                    if (!componentsByKey[rc.roomKey]) componentsByKey[rc.roomKey] = [];
-                    componentsByKey[rc.roomKey].push(rc);
+                const componentsByKey: Record<string, NonNullable<typeof loadedRoomComponents>> = {};
+                if (hasComponents) {
+                    for (const rc of loadedRoomComponents) {
+                        if (!componentsByKey[rc.roomKey]) componentsByKey[rc.roomKey] = [];
+                        componentsByKey[rc.roomKey].push(rc);
+                    }
                 }
+
+                // Build lookup: roomKey → name
+                const namesByKey: Record<string, string> = {};
+                if (hasNames) {
+                    for (const rn of loadedRoomNames) {
+                        namesByKey[rn.roomKey] = rn.name;
+                    }
+                }
+
                 for (const room of Object.values(updatedRooms)) {
                     const key = [...room.cornerIds].sort().join(",");
-                    const matched = componentsByKey[key];
-                    if (matched) {
+                    const matchedComponents = componentsByKey[key];
+                    const matchedName = namesByKey[key];
+                    if (matchedComponents || matchedName) {
                         updatedRooms[room.id] = {
                             ...room,
-                            components: matched.map((rc) => rc.component),
+                            ...(matchedComponents && { components: matchedComponents.map((rc) => rc.component) }),
+                            ...(matchedName && { name: matchedName }),
                         };
                     }
                 }

@@ -13,6 +13,16 @@ export interface PersistedRoomComponent {
     component: RoomComponent;
 }
 
+/**
+ * A persisted room name with the polygon hash key for re-attachment.
+ */
+export interface PersistedRoomName {
+    /** Sorted corner IDs of the room polygon */
+    roomKey: string;
+    floorId: string;
+    name: string;
+}
+
 export interface LoadedPlan {
     id: string;
     name: string;
@@ -27,6 +37,7 @@ export interface LoadedPlan {
     floorplans: FloorplanImage[];
     staircaseOpenings: Record<string, StaircaseOpening>;
     roomComponents: PersistedRoomComponent[];
+    roomNames: PersistedRoomName[];
 }
 
 /**
@@ -198,6 +209,18 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         },
     }));
 
+    // Load room names
+    const roomNameRows = db
+        .select()
+        .from(schema.roomNames)
+        .where(eq(schema.roomNames.planId, planId))
+        .all();
+    const roomNames: PersistedRoomName[] = roomNameRows.map((row) => ({
+        roomKey: row.roomKey,
+        floorId: row.floorId,
+        name: row.name,
+    }));
+
     return {
         id: plan.id,
         name: plan.name,
@@ -212,6 +235,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         floorplans,
         staircaseOpenings,
         roomComponents,
+        roomNames,
     };
 }
 
