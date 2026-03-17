@@ -16,7 +16,7 @@ export async function action({ request }: Route.ActionArgs) {
             floors,
             corners,
             walls,
-            floorplan,
+            floorplans,
             staircaseOpenings,
             roomComponents,
             defaultWallThickness,
@@ -120,6 +120,7 @@ export async function action({ request }: Route.ActionArgs) {
                 height: number;
                 elevation: number;
                 face: string;
+                hinge?: string;
             }>;
             components: Array<{
                 id: string;
@@ -158,6 +159,7 @@ export async function action({ request }: Route.ActionArgs) {
                         height: opening.height,
                         elevation: opening.elevation,
                         face: opening.face,
+                        hinge: opening.hinge ?? "start",
                     })
                     .run();
             }
@@ -181,8 +183,8 @@ export async function action({ request }: Route.ActionArgs) {
             }
         }
 
-        // Insert floorplan image if present
-        if (floorplan) {
+        // Insert floorplan images (one per floor)
+        for (const floorplan of (floorplans || [])) {
             db.insert(schema.floorplanImages)
                 .values({
                     id: uuid(),

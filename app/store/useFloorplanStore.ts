@@ -17,6 +17,28 @@ import type {
 import { defaultModelThemeLight } from "./types";
 import { detectRooms } from "./roomDetection";
 
+/** Build a floorId-keyed map from a persisted floorplans array. */
+function buildFloorplansMap(
+    raw: any[] | null | undefined,
+    fallbackFloorId: string,
+): Record<string, FloorplanImage> {
+    if (!raw || raw.length === 0) return {};
+    const map: Record<string, FloorplanImage> = {};
+    for (const fp of raw) {
+        const fid = fp.floorId ?? fallbackFloorId;
+        map[fid] = {
+            floorId: fid,
+            url: fp.url,
+            name: fp.name,
+            widthMeters: fp.widthMeters,
+            heightMeters: fp.heightMeters,
+            scale: fp.scale ?? 1,
+            opacity: fp.opacity ?? 0.5,
+        };
+    }
+    return map;
+}
+
 const DEFAULT_WALL_THICKNESS = 0.4; // meters
 const DEFAULT_WALL_HEIGHT = 2.2; // meters
 const DEFAULT_FLOOR_HEIGHT = 2.8; // meters
@@ -55,7 +77,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
     corners: {},
     walls: {},
     rooms: {},
-    floorplan: null,
+    floorplans: {},
 
     // ── Floors ────────────────────────────────────────────────────────────────
     floors: [initialFloor],
@@ -150,8 +172,10 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             for (const [sid, so] of Object.entries(s.staircaseOpenings)) {
                 if (so.floorId !== floorId) staircaseOpenings[sid] = so;
             }
-            // Remove floorplan image if it belongs to this floor
-            const floorplan = s.floorplan?.floorId === floorId ? null : s.floorplan;
+            // Remove floorplan image for this floor
+            if (s.floorplans[floorId]) URL.revokeObjectURL(s.floorplans[floorId].url);
+            const floorplans = { ...s.floorplans };
+            delete floorplans[floorId];
 
             // Switch to nearest floor
             let newCurrentFloorId = s.currentFloorId;
@@ -167,7 +191,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                 walls,
                 rooms,
                 staircaseOpenings,
-                floorplan,
+                floorplans,
                 selectedWallId: null,
                 selectedCornerId: null,
                 selectedRoomId: null,
@@ -350,20 +374,60 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         })),
 
     // ── Actions: floorplan image ──────────────────────────────────────────────
-    setFloorplan: (image: FloorplanImage) => set((s) => ({ floorplan: { ...image, floorId: s.currentFloorId } })),
+    setFloorplan: (image: FloorplanImage) =>
+        set((s) => ({
+            floorplans: {
+                ...s.floorplans,
+                [s.currentFloorId]: { ...image, floorId: s.currentFloorId },
+            },
+        })),
 
     updateFloorplan: (patch) =>
         set((s) => {
-            if (!s.floorplan) return s;
-            return { floorplan: { ...s.floorplan, ...patch } };
+            const current = s.floorplans[s.currentFloorId];
+            if (!current) return s;
+            return {
+                floorplans: {
+                    ...s.floorplans,
+                    [s.currentFloorId]: { ...current, ...patch },
+                },
+            };
         }),
 
     removeFloorplan: () =>
         set((s) => {
-            if (s.floorplan) {
-                URL.revokeObjectURL(s.floorplan.url);
+            const current = s.floorplans[s.currentFloorId];
+            if (current) URL.revokeObjectURL(current.url);
+            const floorplans = { ...s.floorplans };
+            delete floorplans[s.currentFloorId];
+            return { floorplans };
+        }),
+
+    calibrateScale: (referenceLength, realMeters) =>
+        set((s) => {
+            if (referenceLength <= 0 || realMeters <= 0) return s;
+            const scaleFactor = realMeters / referenceLength;
+            const fp = s.floorplans[s.currentFloorId];
+            const floorplans = { ...s.floorplans };
+            if (fp) {
+                floorplans[s.currentFloorId] = {
+                    ...fp,
+                    widthMeters: fp.widthMeters * (fp.scale ?? 1) * scaleFactor,
+                    heightMeters: fp.heightMeters * (fp.scale ?? 1) * scaleFactor,
+                    scale: 1,
+                };
             }
-            return { floorplan: null };
+            const corners: typeof s.corners = {};
+            for (const [id, c] of Object.entries(s.corners)) {
+                corners[id] = {
+                    ...c,
+                    position: {
+                        x: c.position.x * scaleFactor,
+                        y: c.position.y * scaleFactor,
+                    },
+                };
+            }
+            return { floorplans, corners };
         }),
 
     // ── Actions: corners ──────────────────────────────────────────────────────
@@ -902,11 +966,10 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
         try {
             const planName = name ?? state.currentPlanName ?? "Untitled Plan";
 
-            // Convert blob URL floorplan image to base64 data URL for persistence
-            let floorplanPayload: any = null;
-            if (state.floorplan) {
-                let imageDataUrl = state.floorplan.url;
-                // If the URL is a blob URL, convert it to a data URL
+            // Convert blob URL floorplan images to base64 data URLs for persistence
+            const floorplansPayload: any[] = [];
+            for (const fp of Object.values(state.floorplans)) {
+                let imageDataUrl = fp.url;
                 if (imageDataUrl.startsWith("blob:")) {
                     const response = await fetch(imageDataUrl);
                     const blob = await response.blob();
@@ -917,15 +980,15 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                         reader.readAsDataURL(blob);
                     });
                 }
-                floorplanPayload = {
-                    floorId: state.floorplan.floorId,
+                floorplansPayload.push({
+                    floorId: fp.floorId,
                     url: imageDataUrl,
-                    name: state.floorplan.name,
-                    widthMeters: state.floorplan.widthMeters,
-                    heightMeters: state.floorplan.heightMeters,
-                    scale: state.floorplan.scale ?? 1,
-                    opacity: state.floorplan.opacity,
-                };
+                    name: fp.name,
+                    widthMeters: fp.widthMeters,
+                    heightMeters: fp.heightMeters,
+                    scale: fp.scale ?? 1,
+                    opacity: fp.opacity,
+                });
             }
 
             const res = await fetch("/api/plans/save", {
@@ -940,7 +1003,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     floors: state.floors,
                     corners: state.corners,
                     walls: state.walls,
-                    floorplan: floorplanPayload,
+                    floorplans: floorplansPayload,
                     staircaseOpenings: state.staircaseOpenings,
                     roomComponents: Object.values(state.rooms).flatMap((room) => {
                         const roomKey = [...room.cornerIds].sort().join(",");
@@ -992,17 +1055,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                 corners: data.corners ?? {},
                 walls: data.walls ?? {},
                 rooms: {},
-                floorplan: data.floorplan
-                    ? {
-                          floorId: data.floorplan.floorId ?? currentFloorId,
-                          url: data.floorplan.url,
-                          name: data.floorplan.name,
-                          widthMeters: data.floorplan.widthMeters,
-                          heightMeters: data.floorplan.heightMeters,
-                          scale: data.floorplan.scale ?? 1,
-                          opacity: data.floorplan.opacity ?? 0.5,
-                      }
-                    : null,
+                floorplans: buildFloorplansMap(data.floorplans, currentFloorId),
                 staircaseOpenings: data.staircaseOpenings ?? {},
                 modelTheme: data.modelTheme ?? { ...defaultModelThemeLight },
                 selectedWallId: null,
@@ -1043,17 +1096,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             corners: data.corners ?? {},
             walls: data.walls ?? {},
             rooms: {},
-            floorplan: data.floorplan
-                ? {
-                      floorId: data.floorplan.floorId ?? currentFloorId,
-                      url: data.floorplan.url,
-                      name: data.floorplan.name,
-                      widthMeters: data.floorplan.widthMeters,
-                      heightMeters: data.floorplan.heightMeters,
-                      scale: data.floorplan.scale ?? 1,
-                      opacity: data.floorplan.opacity ?? 0.5,
-                  }
-                : null,
+            floorplans: buildFloorplansMap(data.floorplans, currentFloorId),
             staircaseOpenings: data.staircaseOpenings ?? {},
             modelTheme: data.modelTheme ?? { ...defaultModelThemeLight },
             selectedWallId: null,
@@ -1101,9 +1144,9 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
 
     newPlan: () => {
         const state = get();
-        // Revoke any existing floorplan blob URL
-        if (state.floorplan?.url?.startsWith("blob:")) {
-            URL.revokeObjectURL(state.floorplan.url);
+        // Revoke any existing floorplan blob URLs
+        for (const fp of Object.values(state.floorplans)) {
+            if (fp.url?.startsWith("blob:")) URL.revokeObjectURL(fp.url);
         }
         const defaultFloor = createDefaultFloor();
         set({
@@ -1114,7 +1157,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             corners: {},
             walls: {},
             rooms: {},
-            floorplan: null,
+            floorplans: {},
             staircaseOpenings: {},
             selectedWallId: null,
             selectedCornerId: null,

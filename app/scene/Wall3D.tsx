@@ -1,11 +1,7 @@
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useFloorplanStore } from "../store/useFloorplanStore";
-import {
-  useSectionFocusStore,
-  getFocusedFloorId,
-} from "../store/useSectionFocusStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useViewerTheme } from "../hooks/useViewerThemeColors";
 import { computeWallGeometry } from "./wallGeometryUtils";
@@ -403,66 +399,6 @@ export function Wall3D({ wallId }: Wall3DProps) {
       });
   }, [computed, wall]);
 
-  // ── Section focus: opacity & camera-facing transparency ───────────────────
-
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(({ camera }) => {
-    if (!groupRef.current || !wall) return;
-
-    const focusState = useSectionFocusStore.getState();
-    const focused = getFocusedFloorId(focusState);
-
-    // Compute floor opacity factor
-    let targetBase: number;
-    if (focused === null) {
-      targetBase = 1;
-    } else if (wall.floorId === focused) {
-      // This wall's floor is focused — check if it faces the camera
-      targetBase = 1;
-      if (computed) {
-        const nx = computed.normX;
-        const nz = computed.normY; // 2D Y → 3D Z
-        const mx = computed.mid.x;
-        const mz = computed.mid.y;
-
-        const dx = camera.position.x - mx;
-        const dz = camera.position.z - mz;
-        const len = Math.sqrt(dx * dx + dz * dz);
-        if (len > 0) {
-          const dot = Math.abs(nx * (dx / len) + nz * (dz / len));
-          if (dot > 0.3) {
-            targetBase = 0.15;
-          }
-        }
-      }
-    } else {
-      targetBase = 0.25;
-    }
-
-    // Apply to all materials in the wall group
-    groupRef.current.traverse((child) => {
-      if (
-        child instanceof THREE.Mesh ||
-        child instanceof THREE.Line ||
-        child instanceof THREE.LineSegments
-      ) {
-        const mats = Array.isArray(child.material)
-          ? child.material
-          : [child.material];
-        for (const mat of mats) {
-          if ((mat as any)._initOp === undefined) {
-            (mat as any)._initOp = mat.opacity;
-          }
-          const initOp = (mat as any)._initOp as number;
-          const target = initOp * targetBase;
-          mat.opacity = THREE.MathUtils.lerp(mat.opacity, target, 0.1);
-          mat.transparent = true;
-        }
-      }
-    });
-  });
-
   // ── All hooks above this line ──────────────────────────────────────────────
 
   const colors = useThemeColors();
@@ -474,7 +410,7 @@ export function Wall3D({ wallId }: Wall3DProps) {
   if (!computed || !wallGeometry) return null;
 
   return (
-    <group ref={groupRef}>
+    <group>
       {/* Main wall mesh — already in world space */}
       <mesh geometry={wallGeometry} castShadow receiveShadow>
         <meshStandardMaterial
@@ -618,6 +554,19 @@ export function Wall3D({ wallId }: Wall3DProps) {
         </group>
       ))}
 
+      {/* ── Door panels (animated, clickable) ───────────────────────── */}
+      {wall.openings
+        .filter((o) => o.type === "door")
+        .map((opening) => (
+          <Door3D
+            key={opening.id}
+            opening={opening}
+            computed={computed}
+            colors={colors}
+            wallId={wallId}
+          />
+        ))}
+
       {/* ── Wall components (lights, sensors, outlets, switches) ──────── */}
       {wall.components.map((comp) => (
         <Component3D
@@ -712,4 +661,95 @@ function buildMiteredPrism(
   geo.computeVertexNormals();
 
   return geo;
+}
+
+// ─── Door3D: animated door panel that swings open on click ───────────────────
+
+interface Door3DProps {
+  opening: WallOpening;
+  computed: NonNullable<ReturnType<typeof computeWallGeometry>>;
+  colors: ReturnType<typeof useThemeColors>;
+  wallId: string;
+}
+
+function Door3D({ opening, computed, colors, wallId }: Door3DProps) {
+  const updateOpening = useFloorplanStore((s) => s.updateOpening);
+  const swingGroupRef = useRef<THREE.Group>(null);
+
+  const { start, dirX, dirY } = computed;
+
+  const DOOR_THICKNESS = 0.04; // 4 cm door panel
+  const hinge = opening.hinge ?? "start";
+
+  // X position of the hinge in local wall space
+  const hingeLocalX =
+    hinge === "start" ? opening.offset : opening.offset + opening.width;
+
+  // Door panel offset from hinge so the panel fills the opening
+  const panelOffsetX =
+    hinge === "start" ? opening.width / 2 : -opening.width / 2;
+
+  // Hinge world position
+  const hingeWorldX = start.x + hingeLocalX * dirX;
+  const hingeWorldZ = start.y + hingeLocalX * dirY;
+  const doorCenterY = opening.elevation + opening.height / 2;
+
+  // Align the outer group with the wall direction so local +X = along wall
+  const wallAngle = Math.atan2(dirY, dirX);
+
+  // Swing direction: rotating +Y opens the door.
+  // When hinge=start and face=left (or hinge=end and face=right) → swing = -1
+  // otherwise → swing = +1
+  const swingSign =
+    (opening.face === "left") === (hinge === "start") ? -1 : 1;
+
+  const targetAngle = (opening.isOpen ?? false) ? swingSign * (Math.PI / 2) : 0;
+
+  useFrame(() => {
+    if (!swingGroupRef.current) return;
+    swingGroupRef.current.rotation.y = THREE.MathUtils.lerp(
+      swingGroupRef.current.rotation.y,
+      targetAngle,
+      0.12,
+    );
+  });
+
+  const handleClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      updateOpening(wallId, opening.id, { isOpen: !(opening.isOpen ?? false) });
+    },
+    [wallId, opening.id, opening.isOpen, updateOpening],
+  );
+
+  return (
+    // Outer group: at hinge point, rotated so local X runs along the wall
+    <group
+      position={[hingeWorldX, doorCenterY, hingeWorldZ]}
+      rotation={[0, -wallAngle, 0]}
+    >
+      {/* Inner group: animated swing around hinge axis */}
+      <group ref={swingGroupRef}>
+        <mesh
+          position={[panelOffsetX, 0, 0]}
+          onClick={handleClick}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerOut={(e) => {
+            e.stopPropagation();
+            document.body.style.cursor = "default";
+          }}
+        >
+          <boxGeometry args={[opening.width, opening.height, DOOR_THICKNESS]} />
+          <meshStandardMaterial
+            color={colors.wall3dDoorFrame}
+            roughness={0.75}
+            metalness={0.05}
+          />
+        </mesh>
+      </group>
+    </group>
+  );
 }

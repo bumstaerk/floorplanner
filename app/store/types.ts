@@ -28,6 +28,10 @@ export interface WallOpening {
   elevation: number;
   /** Which face the opening belongs to */
   face: WallFaceSide;
+  /** Which end of the opening the door is hinged on (default "start") */
+  hinge?: "start" | "end";
+  /** Whether the door is currently open (default false = closed) */
+  isOpen?: boolean;
 }
 
 // ─── Light state ──────────────────────────────────────────────────────────────
@@ -266,6 +270,8 @@ export interface FloorplanImage {
   scale: number;
   /** Opacity when rendering (0-1) */
   opacity: number;
+  /** Whether the image is shown in the 2D view (default true) */
+  visible?: boolean;
 }
 
 // ─── Model theme (3D viewer) ────────────────────────────────────────────────────
@@ -319,7 +325,7 @@ export const defaultModelThemeDark: ModelTheme = {
 
 export type EditorMode = "build" | "preview";
 
-export type BuildTool = "select" | "wall" | "pan" | "staircase" | "measure";
+export type BuildTool = "select" | "wall" | "pan" | "staircase" | "measure" | "calibrate";
 
 /** Snap settings */
 export interface SnapSettings {
@@ -354,7 +360,8 @@ export interface FloorplanState {
   corners: Record<string, CornerNode>;
   walls: Record<string, WallSegment>;
   rooms: Record<string, Room>;
-  floorplan: FloorplanImage | null;
+  /** Floorplan images keyed by floorId. Each floor can have at most one image. */
+  floorplans: Record<string, FloorplanImage>;
 
   // ── Floors ──
   floors: Floor[];
@@ -443,6 +450,7 @@ export interface FloorplanState {
   // ── Actions: floorplan image ──
   setFloorplan: (image: FloorplanImage) => void;
   updateFloorplan: (patch: Partial<FloorplanImage>) => void;
+  calibrateScale: (referenceLength: number, realMeters: number) => void;
   removeFloorplan: () => void;
 
   // ── Actions: corners ──
@@ -544,7 +552,7 @@ export interface FloorplanState {
     floors: Floor[];
     corners: Record<string, CornerNode>;
     walls: Record<string, WallSegment>;
-    floorplan: FloorplanImage | null;
+    floorplans?: FloorplanImage[] | null;
     staircaseOpenings: Record<string, StaircaseOpening>;
     roomComponents?: Array<{
       roomKey: string;

@@ -11,6 +11,7 @@ import { Corner2D } from "./Corner2D";
 import { Room2D } from "./Room2D";
 import { DrawingLine } from "./DrawingLine";
 import { MeasureLine } from "./MeasureLine";
+import { CalibrateLine } from "./CalibrateLine";
 import { Staircase2D } from "./Staircase2D";
 import type { Point2D } from "../store/types";
 
@@ -391,6 +392,10 @@ function BuildKeyboardHandler() {
           state.setActiveTool("measure");
           return;
         }
+        if (e.key === "k" || e.key === "K") {
+          state.setActiveTool("calibrate");
+          return;
+        }
         if (e.key === "s" || e.key === "S") {
           state.updateSnap({ enabled: !state.snap.enabled });
           return;
@@ -508,6 +513,9 @@ export function BuildScene() {
 
       {/* Measure tool ruler */}
       <MeasureLine />
+
+      {/* Calibrate scale tool */}
+      <CalibrateLine />
 
       {/* Keyboard handler */}
       <BuildKeyboardHandler />

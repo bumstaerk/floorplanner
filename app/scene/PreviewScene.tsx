@@ -1,18 +1,13 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import {
   OrbitControls,
   PerspectiveCamera,
   ContactShadows,
 } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { useShallow } from "zustand/react/shallow";
 import * as THREE from "three";
 import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useTimeOfDayStore } from "../store/useTimeOfDayStore";
-import {
-  useSectionFocusStore,
-  getFocusedFloorId,
-} from "../store/useSectionFocusStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { FloorplanPlane } from "./FloorplanPlane";
 import { Wall3D } from "./Wall3D";
@@ -60,39 +55,20 @@ function PreviewGrid() {
   );
 }
 
-/**
- * A thin horizontal slab between floors.
- * Supports section-focus opacity animation.
- */
 function FloorPlate3D({
   yOffset,
   width,
   depth,
   centerX,
   centerZ,
-  floorId,
 }: {
   yOffset: number;
   width: number;
   depth: number;
   centerX: number;
   centerZ: number;
-  floorId: string;
 }) {
   const colors = useThemeColors();
-  const matRef = useRef<THREE.MeshStandardMaterial>(null);
-
-  useFrame(() => {
-    if (!matRef.current) return;
-    const focusState = useSectionFocusStore.getState();
-    const focused = getFocusedFloorId(focusState);
-    const target = focused === null ? 1 : floorId === focused ? 1 : 0.25;
-    matRef.current.opacity = THREE.MathUtils.lerp(
-      matRef.current.opacity,
-      target,
-      0.1,
-    );
-  });
 
   return (
     <mesh
@@ -103,12 +79,10 @@ function FloorPlate3D({
     >
       <planeGeometry args={[width + 0.4, depth + 0.4]} />
       <meshStandardMaterial
-        ref={matRef}
         color={colors.floorPlate}
         roughness={0.9}
         metalness={0.05}
         side={THREE.DoubleSide}
-        transparent
       />
     </mesh>
   );
@@ -317,7 +291,6 @@ export function PreviewScene() {
                 depth={bbDepth}
                 centerX={centerX}
                 centerZ={centerZ}
-                floorId={floor.id}
               />
             )}
 

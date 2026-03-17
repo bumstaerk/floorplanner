@@ -79,6 +79,7 @@ export const wallOpenings = sqliteTable("wall_openings", {
     height: real("height").notNull(),
     elevation: real("elevation").notNull(),
     face: text("face").notNull(), // "left" | "right"
+    hinge: text("hinge"), // "start" | "end", null = "start"
 });
 
 // ---------------------------------------------------------------------------

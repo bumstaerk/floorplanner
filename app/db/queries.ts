@@ -24,7 +24,7 @@ export interface LoadedPlan {
     floors: Floor[];
     corners: Record<string, CornerNode>;
     walls: Record<string, WallSegment>;
-    floorplan: FloorplanImage | null;
+    floorplans: FloorplanImage[];
     staircaseOpenings: Record<string, StaircaseOpening>;
     roomComponents: PersistedRoomComponent[];
 }
@@ -109,6 +109,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
             height: o.height,
             elevation: o.elevation,
             face: o.face as "left" | "right",
+            hinge: (o.hinge as "start" | "end" | null) ?? "start",
         }));
 
         // Load components for this wall
@@ -140,24 +141,22 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         };
     }
 
-    // Load floorplan image (first one found — currently single image per plan)
-    const floorplanRow = db
+    // Load all floorplan images for this plan (one per floor)
+    const floorplanRows = db
         .select()
         .from(schema.floorplanImages)
         .where(eq(schema.floorplanImages.planId, planId))
-        .get();
+        .all();
 
-    const floorplan: FloorplanImage | null = floorplanRow
-        ? {
-              floorId: floorplanRow.floorId || defaultFloorId || floors[0].id,
-              url: floorplanRow.imageData,
-              name: floorplanRow.name,
-              widthMeters: floorplanRow.widthMeters,
-              heightMeters: floorplanRow.heightMeters,
-              scale: floorplanRow.scale,
-              opacity: floorplanRow.opacity,
-          }
-        : null;
+    const floorplans: FloorplanImage[] = floorplanRows.map((row) => ({
+        floorId: row.floorId || defaultFloorId || floors[0].id,
+        url: row.imageData,
+        name: row.name,
+        widthMeters: row.widthMeters,
+        heightMeters: row.heightMeters,
+        scale: row.scale,
+        opacity: row.opacity,
+    }));
 
     // Load staircase openings
     const staircaseOpenings: Record<string, StaircaseOpening> = {};
@@ -210,7 +209,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
         floors,
         corners,
         walls,
-        floorplan,
+        floorplans,
         staircaseOpenings,
         roomComponents,
     };

@@ -117,7 +117,7 @@ export function Opening2D({
 
   switch (opening.type) {
     case "door":
-      return <Door2D data={data} isSelected={isWallSelected} />;
+      return <Door2D data={data} isSelected={isWallSelected} hingeAtEnd={opening.hinge === "end"} />;
     case "window":
       return <Window2D data={data} isSelected={isWallSelected} />;
     case "hole":
@@ -165,9 +165,11 @@ interface OpeningData {
 function Door2D({
   data,
   isSelected,
+  hingeAtEnd,
 }: {
   data: OpeningData;
   isSelected: boolean;
+  hingeAtEnd: boolean;
 }) {
   const { arcPoints, hingePt, swingEndPt, gapQuad } = useMemo(() => {
     const {
@@ -203,56 +205,45 @@ function Door2D({
 
     const gapQuad = { gapLS, gapLE, gapRS, gapRE };
 
-    // Hinge point: at the start edge of the opening, on the face side of the wall
+    // Hinge point: at the start or end edge of the opening, on the face side.
+    const hingeBase = hingeAtEnd ? endWorld : startWorld;
     const hingePt: Point2D = {
-      x: startWorld.x + normX * halfT * faceMul,
-      y: startWorld.y + normY * halfT * faceMul,
+      x: hingeBase.x + normX * halfT * faceMul,
+      y: hingeBase.y + normY * halfT * faceMul,
     };
 
-    // The door swings outward from the face side.
-    // Swing end point: perpendicular to the wall, at distance = oWidth from hinge
+    // Swing end: perpendicular to wall, at distance = oWidth from hinge
     const swingEndPt: Point2D = {
       x: hingePt.x + normX * oWidth * faceMul,
       y: hingePt.y + normY * oWidth * faceMul,
     };
 
     // Quarter-circle arc from the wall edge to the fully-open position.
-    // The arc sweeps from the direction along the wall (toward the end) to
-    // the direction perpendicular to the wall (outward on the face side).
-    //
-    // Arc center = hinge point
-    // Arc radius = opening width
-    // Start angle: along the wall direction (dirX, dirY)
-    // End angle: perpendicular to wall on the face side (normX*faceMul, normY*faceMul)
+    // When hinge is at start: arc sweeps from wall direction (start→end) to normal.
+    // When hinge is at end:   arc sweeps from reversed wall direction (end→start) to normal.
+    const arcDirX = hingeAtEnd ? -dirX : dirX;
+    const arcDirY = hingeAtEnd ? -dirY : dirY;
 
     const segments = 24;
     const arcPoints: [number, number, number][] = [];
 
-    // Angle of the wall direction
-    const angleWall = Math.atan2(dirY, dirX);
-    // Angle of the face normal
+    const angleWall = Math.atan2(arcDirY, arcDirX);
     const angleNorm = Math.atan2(normY * faceMul, normX * faceMul);
 
-    // Figure out sweep direction: we want to go from angleWall to angleNorm
-    // in the shorter arc direction (should be ~90°).
-    let startAngle = angleWall;
-    let endAngle = angleNorm;
-
-    // Normalize the sweep to be within (-PI, PI]
-    let sweep = endAngle - startAngle;
+    let sweep = angleNorm - angleWall;
     while (sweep > Math.PI) sweep -= 2 * Math.PI;
     while (sweep < -Math.PI) sweep += 2 * Math.PI;
 
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
-      const a = startAngle + sweep * t;
+      const a = angleWall + sweep * t;
       const px = hingePt.x + Math.cos(a) * oWidth;
       const py = hingePt.y + Math.sin(a) * oWidth;
       arcPoints.push([px, Y + 0.002, py]);
     }
 
     return { arcPoints, hingePt, swingEndPt, gapQuad };
-  }, [data]);
+  }, [data, hingeAtEnd]);
 
   const colors = useThemeColors();
   const color = isSelected ? colors.openingSelected : colors.openingDefault;

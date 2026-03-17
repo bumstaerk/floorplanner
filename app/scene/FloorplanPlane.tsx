@@ -10,9 +10,9 @@ import { useFloorplanStore } from "../store/useFloorplanStore";
  * and match measurements against the walls being drawn.
  */
 export function FloorplanPlane() {
-    const floorplan = useFloorplanStore((s) => s.floorplan);
+    const floorplan = useFloorplanStore((s) => s.floorplans[s.currentFloorId] ?? null);
 
-    if (!floorplan) return null;
+    if (!floorplan || floorplan.visible === false) return null;
 
     return <FloorplanPlaneInner floorplan={floorplan} />;
 }
@@ -20,9 +20,7 @@ export function FloorplanPlane() {
 function FloorplanPlaneInner({
     floorplan,
 }: {
-    floorplan: NonNullable<
-        ReturnType<typeof useFloorplanStore.getState>["floorplan"]
-    >;
+    floorplan: import("../store/types").FloorplanImage;
 }) {
     const texture = useMemo(() => {
         const tex = new THREE.TextureLoader().load(floorplan.url);

@@ -1,12 +1,7 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { useFloorplanStore } from "../store/useFloorplanStore";
-import {
-  useSectionFocusStore,
-  getFocusedFloorId,
-} from "../store/useSectionFocusStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useViewerTheme } from "../hooks/useViewerThemeColors";
 import { RoomComponent3D } from "./RoomComponent3D";
@@ -73,36 +68,6 @@ export function Room3D({ roomId }: Room3DProps) {
     return shapeGeo;
   }, [room, corners]);
 
-  // ── Section focus: opacity animation ────────────────────────────────────────
-
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(() => {
-    if (!groupRef.current || !room) return;
-
-    const focusState = useSectionFocusStore.getState();
-    const focused = getFocusedFloorId(focusState);
-    const targetBase =
-      focused === null ? 1 : room.floorId === focused ? 1 : 0.25;
-
-    groupRef.current.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const mats = Array.isArray(child.material)
-          ? child.material
-          : [child.material];
-        for (const mat of mats) {
-          if ((mat as any)._initOp === undefined) {
-            (mat as any)._initOp = mat.opacity;
-          }
-          const initOp = (mat as any)._initOp as number;
-          const target = initOp * targetBase;
-          mat.opacity = THREE.MathUtils.lerp(mat.opacity, target, 0.1);
-          mat.transparent = true;
-        }
-      }
-    });
-  });
-
   if (!room || !fillGeo) return null;
 
   const { center, area, name } = room;
@@ -111,7 +76,7 @@ export function Room3D({ roomId }: Room3DProps) {
   const Y = 0.005;
 
   return (
-    <group ref={groupRef}>
+    <group>
       {/* Room floor surface */}
       <mesh geometry={fillGeo} receiveShadow>
         {isViewer ? (

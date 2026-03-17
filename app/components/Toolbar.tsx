@@ -30,7 +30,7 @@ export function Toolbar() {
   const activeTool = useFloorplanStore((s) => s.activeTool);
   const snap = useFloorplanStore((s) => s.snap);
   const grid = useFloorplanStore((s) => s.grid);
-  const floorplan = useFloorplanStore((s) => s.floorplan);
+  const floorplan = useFloorplanStore((s) => s.floorplans[s.currentFloorId] ?? null);
   const drawingFromCornerId = useFloorplanStore((s) => s.drawingFromCornerId);
   const historyIndex = useFloorplanStore((s) => s.historyIndex);
   const historyLength = useFloorplanStore((s) => s.history.length);
@@ -514,6 +514,26 @@ export function Toolbar() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     d="M2 17l1.5-1.5M22 7l-1.5 1.5M2 17l5-5m0 0l1.5 1.5M7 12l3-3m0 0l1.5 1.5M10 9l3-3m0 0l1.5 1.5M13 6l3-3m0 0l1.5 1.5M16 3l6 6M2 17l6 6"
+                  />
+                </svg>
+              </ToolButton>
+              <ToolButton
+                active={activeTool === "calibrate"}
+                onClick={() => handleToolChange("calibrate")}
+                title="Calibrate Scale (K)"
+                shortcut="K"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 6h18M3 12h18M3 18h18M9 3v18M15 3v18"
                   />
                 </svg>
               </ToolButton>

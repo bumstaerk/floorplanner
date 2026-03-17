@@ -8,7 +8,7 @@ export function StatusBar() {
   const wallCount = useFloorplanStore((s) => Object.keys(s.walls).length);
   const cornerCount = useFloorplanStore((s) => Object.keys(s.corners).length);
   const roomCount = useFloorplanStore((s) => Object.keys(s.rooms).length);
-  const floorplan = useFloorplanStore((s) => s.floorplan);
+  const floorplan = useFloorplanStore((s) => s.floorplans[s.currentFloorId] ?? null);
   const floors = useFloorplanStore(useShallow((s) => s.floors));
   const currentFloorId = useFloorplanStore((s) => s.currentFloorId);
 
