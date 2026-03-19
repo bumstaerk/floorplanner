@@ -3,6 +3,8 @@ import { useFloorplanStore } from "../store/useFloorplanStore";
 import { useShallow } from "zustand/react/shallow";
 import type { WallOpening, WallComponent, RoomComponent, FloorplanImage, ModelTheme } from "../store/types";
 import { defaultModelThemeLight } from "../store/types";
+import { HASettingsPanel } from "./HASettingsPanel";
+import { HAEntityPicker } from "./HAEntityPicker";
 
 /**
  * Properties panel on the right side of the editor.
@@ -47,6 +49,9 @@ export function PropertiesPanel() {
                 {/* Plan Settings — always visible */}
                 <PlanSettings />
 
+                {/* Home Assistant — connection & entity binding settings */}
+                <HASettingsPanel />
+
                 {/* Model Theme — 3D viewer colour customisation */}
                 <ModelThemeEditor />
             </div>
@@ -69,6 +74,9 @@ function RoomProperties({ roomId }: { roomId: string }) {
     );
     const updateRoomComponent = useFloorplanStore(
         (s) => s.updateRoomComponent,
+    );
+    const updateRoomComponentHAEntity = useFloorplanStore(
+        (s) => s.updateRoomComponentHAEntity,
     );
     const pushHistory = useFloorplanStore((s) => s.pushHistory);
     const [editingName, setEditingName] = useState(false);
@@ -330,6 +338,17 @@ function RoomProperties({ roomId }: { roomId: string }) {
                                 compact
                             />
                         </div>
+                        <div>
+                            <label className="text-[10px] text-gray-500 block mb-1">
+                                HA Entity
+                            </label>
+                            <HAEntityPicker
+                                value={comp.haEntityId ?? null}
+                                onChange={(entityId) =>
+                                    updateRoomComponentHAEntity(roomId, comp.id, entityId)
+                                }
+                            />
+                        </div>
                     </div>
                 ))}
             </div>
@@ -366,6 +385,7 @@ function WallProperties({ wallId }: { wallId: string }) {
     const addComponent = useFloorplanStore((s) => s.addComponent);
     const removeComponent = useFloorplanStore((s) => s.removeComponent);
     const updateComponent = useFloorplanStore((s) => s.updateComponent);
+    const updateComponentHAEntity = useFloorplanStore((s) => s.updateComponentHAEntity);
     const pushHistory = useFloorplanStore((s) => s.pushHistory);
     const selectWall = useFloorplanStore((s) => s.selectWall);
 
@@ -833,6 +853,17 @@ function WallProperties({ wallId }: { wallId: string }) {
                                 <option value="left">Left</option>
                                 <option value="right">Right</option>
                             </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-gray-500 block mb-1">
+                                HA Entity
+                            </label>
+                            <HAEntityPicker
+                                value={comp.haEntityId ?? null}
+                                onChange={(entityId) =>
+                                    updateComponentHAEntity(wallId, comp.id, entityId)
+                                }
+                            />
                         </div>
                     </div>
                 ))}

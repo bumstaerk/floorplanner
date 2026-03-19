@@ -136,6 +136,8 @@ export interface WallComponent {
   face: WallFaceSide;
   /** Arbitrary metadata for the component type */
   meta?: Record<string, unknown>;
+  /** Bound Home Assistant entity ID, e.g. "light.living_room" */
+  haEntityId?: string | null;
 }
 
 /**
@@ -219,7 +221,33 @@ export interface RoomComponent {
   y: number;
   /** Arbitrary metadata for the component type */
   meta?: Record<string, unknown>;
+  /** Bound Home Assistant entity ID, e.g. "light.kitchen" */
+  haEntityId?: string | null;
 }
+
+/** A Home Assistant entity returned from the proxy API */
+export interface HAEntity {
+  entityId: string;
+  friendlyName: string;
+  domain: string;
+  state: string;
+}
+
+/** Live state for a single HA entity, mirroring HA's state object shape */
+export interface HAEntityState {
+  state: string;
+  attributes: Record<string, unknown>;
+  lastChanged: string;
+}
+
+/** Messages broadcast from the server bridge to browser clients */
+export type HABridgeMessage =
+  | { type: "ha_snapshot"; states: Record<string, HAEntityState> }
+  | { type: "ha_state_changed"; entityId: string; state: HAEntityState }
+  | { type: "ha_status"; status: "connected" | "disconnected" };
+
+/** Connection status of the browser ↔ bridge WebSocket */
+export type HAConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 
 /**
  * A room is a closed polygon formed by a cycle of walls/corners.
@@ -491,6 +519,18 @@ export interface FloorplanState {
     wallId: string,
     componentId: string,
     patch: Partial<Omit<WallComponent, "id">>,
+  ) => void;
+  /** Bind (or unbind) a HA entity to a wall component — does not push history */
+  updateComponentHAEntity: (
+    wallId: string,
+    componentId: string,
+    entityId: string | null,
+  ) => void;
+  /** Bind (or unbind) a HA entity to a room component — does not push history */
+  updateRoomComponentHAEntity: (
+    roomId: string,
+    componentId: string,
+    entityId: string | null,
   ) => void;
 
   // ── Actions: drawing ──

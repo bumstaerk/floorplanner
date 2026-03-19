@@ -11,6 +11,7 @@ import { StatusBar } from "../components/StatusBar";
 import { TimeOfDayControl } from "../components/TimeOfDayControl";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { loadMostRecentPlan, type LoadedPlan } from "~/db/queries";
+import { useHAWebSocket } from "~/hooks/useHAWebSocket";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -102,6 +103,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const mode = useFloorplanStore((s) => s.mode);
 
   useHydrateStore(plan);
+  useHAWebSocket();
 
   return (
     <div className="relative w-screen h-screen bg-gray-100 dark:bg-gray-950 overflow-hidden">

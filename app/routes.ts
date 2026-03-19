@@ -6,4 +6,6 @@ export default [
     route("api/plans", "routes/api.plans.ts"),
     route("api/plans/save", "routes/api.plans.save.ts"),
     route("api/plans/:id", "routes/api.plans.$id.ts"),
+    route("api/ha/config", "routes/api.ha.config.ts"),
+    route("api/ha/entities", "routes/api.ha.entities.ts"),
 ] satisfies RouteConfig;

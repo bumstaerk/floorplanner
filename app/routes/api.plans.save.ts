@@ -131,6 +131,7 @@ export async function action({ request }: Route.ActionArgs) {
                 elevation: number;
                 face: string;
                 meta?: Record<string, unknown>;
+                haEntityId?: string | null;
             }>;
         }>;
 
@@ -179,6 +180,7 @@ export async function action({ request }: Route.ActionArgs) {
                         meta: component.meta
                             ? JSON.stringify(component.meta)
                             : null,
+                        haEntityId: component.haEntityId ?? null,
                     })
                     .run();
             }
@@ -234,6 +236,7 @@ export async function action({ request }: Route.ActionArgs) {
             x: number;
             y: number;
             meta?: Record<string, unknown>;
+            haEntityId?: string | null;
         }>;
         for (const rc of roomComponentEntries) {
             db.insert(schema.roomComponents)
@@ -247,6 +250,7 @@ export async function action({ request }: Route.ActionArgs) {
                     x: rc.x,
                     y: rc.y,
                     meta: rc.meta ? JSON.stringify(rc.meta) : null,
+                    haEntityId: rc.haEntityId ?? null,
                 })
                 .run();
         }

@@ -96,6 +96,7 @@ export const wallComponents = sqliteTable("wall_components", {
     elevation: real("elevation").notNull(),
     face: text("face").notNull(), // "left" | "right"
     meta: text("meta"), // nullable JSON string
+    haEntityId: text("ha_entity_id"), // nullable HA entity binding
 });
 
 // ---------------------------------------------------------------------------
@@ -166,4 +167,15 @@ export const roomComponents = sqliteTable("room_components", {
     x: real("x").notNull(),
     y: real("y").notNull(),
     meta: text("meta"), // nullable JSON string
+    haEntityId: text("ha_entity_id"), // nullable HA entity binding
+});
+
+// ---------------------------------------------------------------------------
+// 10. HA Config — Home Assistant connection settings (single row, id = 1)
+// ---------------------------------------------------------------------------
+export const haConfig = sqliteTable("ha_config", {
+    id: integer("id").primaryKey(),
+    host: text("host").notNull(),
+    token: text("token").notNull(),
+    updatedAt: integer("updated_at").notNull(),
 });

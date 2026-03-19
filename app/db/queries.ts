@@ -137,6 +137,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
             elevation: c.elevation,
             face: c.face as "left" | "right",
             meta: c.meta ? JSON.parse(c.meta) : undefined,
+            haEntityId: c.haEntityId ?? null,
         }));
 
         walls[row.id] = {
@@ -206,6 +207,7 @@ export function loadPlanById(planId: string): LoadedPlan | null {
             x: row.x,
             y: row.y,
             meta: row.meta ? JSON.parse(row.meta) : undefined,
+            haEntityId: row.haEntityId ?? null,
         },
     }));
 
@@ -255,4 +257,29 @@ export function loadMostRecentPlan(): LoadedPlan | null {
     if (!row) return null;
 
     return loadPlanById(row.id);
+}
+
+// ─── HA Config queries ────────────────────────────────────────────────────────
+
+/** Returns the stored HA host and token, or null if not configured. */
+export function getHAConfig(): { host: string; token: string } | null {
+    const row = db.select().from(schema.haConfig).where(eq(schema.haConfig.id, 1)).get();
+    if (!row) return null;
+    return { host: row.host, token: row.token };
+}
+
+/** Upserts the single ha_config row (id = 1). */
+export function setHAConfig(host: string, token: string): void {
+    db.insert(schema.haConfig)
+        .values({ id: 1, host, token, updatedAt: Date.now() })
+        .onConflictDoUpdate({
+            target: schema.haConfig.id,
+            set: { host, token, updatedAt: Date.now() },
+        })
+        .run();
+}
+
+/** Removes the ha_config row. */
+export function deleteHAConfig(): void {
+    db.delete(schema.haConfig).where(eq(schema.haConfig.id, 1)).run();
 }

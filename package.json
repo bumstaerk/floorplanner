@@ -9,9 +9,9 @@
         ]
     },
     "scripts": {
-        "build": "react-router build",
+        "build": "react-router build && vite build --config vite.server.config.ts",
         "dev": "react-router dev",
-        "start": "react-router-serve ./build/server/index.js",
+        "start": "node ./build/server/server.js",
         "typecheck": "react-router typegen && tsc",
         "db:generate": "drizzle-kit generate",
         "db:migrate": "drizzle-kit migrate",
@@ -31,7 +31,8 @@
         "react-router": "7.12.0",
         "three": "^0.183.2",
         "uuid": "^13.0.0",
-        "zustand": "^5.0.11"
+        "ws": "^8.18.3",
+    "zustand": "^5.0.11"
     },
     "devDependencies": {
         "@react-router/dev": "7.12.0",
@@ -42,6 +43,7 @@
         "@types/react-dom": "^19.2.3",
         "@types/three": "^0.183.1",
         "@types/uuid": "^11.0.0",
+        "@types/ws": "^8.5.14",
         "drizzle-kit": "^0.31.9",
         "tailwindcss": "^4.1.13",
         "typescript": "^5.9.2",

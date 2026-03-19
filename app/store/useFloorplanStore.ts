@@ -301,8 +301,9 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
             const room = s.rooms[roomId];
             if (!room) return s;
             const newComponent: RoomComponent = {
-                id: uuid(),
                 ...component,
+                id: uuid(),
+                haEntityId: component.haEntityId ?? null,
             };
             return {
                 rooms: {
@@ -604,7 +605,7 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                     ...s.walls,
                     [wallId]: {
                         ...wall,
-                        components: [...wall.components, { ...component, id }],
+                        components: [...wall.components, { ...component, id, haEntityId: component.haEntityId ?? null }],
                     },
                 },
             };
@@ -640,6 +641,40 @@ export const useFloorplanStore = create<FloorplanState>((set, get) => ({
                         ...wall,
                         components: wall.components.map((c) =>
                             c.id === componentId ? { ...c, ...patch } : c,
+                        ),
+                    },
+                },
+            };
+        }),
+
+    updateComponentHAEntity: (wallId, componentId, entityId) =>
+        set((s) => {
+            const wall = s.walls[wallId];
+            if (!wall) return s;
+            return {
+                walls: {
+                    ...s.walls,
+                    [wallId]: {
+                        ...wall,
+                        components: wall.components.map((c) =>
+                            c.id === componentId ? { ...c, haEntityId: entityId } : c,
+                        ),
+                    },
+                },
+            };
+        }),
+
+    updateRoomComponentHAEntity: (roomId, componentId, entityId) =>
+        set((s) => {
+            const room = s.rooms[roomId];
+            if (!room) return s;
+            return {
+                rooms: {
+                    ...s.rooms,
+                    [roomId]: {
+                        ...room,
+                        components: room.components.map((c) =>
+                            c.id === componentId ? { ...c, haEntityId: entityId } : c,
                         ),
                     },
                 },
