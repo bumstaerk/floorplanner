@@ -60,6 +60,15 @@ export function Toolbar() {
   const setCurrentPlanName = useFloorplanStore((s) => s.setCurrentPlanName);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+
+  // ── Import dialog state ─────────────────────────────────────────────────────
+
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importDialogName, setImportDialogName] = useState("");
+  const [importDialogData, setImportDialogData] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const canUndo = historyIndex >= 0;
   const canRedo = historyIndex < historyLength - 2;
@@ -138,6 +147,140 @@ export function Toolbar() {
     setShowSaveDialog(true);
   }, [currentPlanName]);
 
+  // ── Export ───────────────────────────────────────────────────────────────────
+
+  const handleExport = useCallback(async () => {
+    const state = useFloorplanStore.getState();
+
+    // Convert any blob: URLs to base64 data URLs
+    const floorplansPayload: object[] = [];
+    for (const fp of Object.values(state.floorplans)) {
+      let imageDataUrl = fp.url;
+      if (imageDataUrl.startsWith("blob:")) {
+        const response = await fetch(imageDataUrl);
+        const blob = await response.blob();
+        imageDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
+      floorplansPayload.push({ ...fp, url: imageDataUrl });
+    }
+
+    const exportData = {
+      formatVersion: 1,
+      name: state.currentPlanName || "Untitled Plan",
+      defaultWallThickness: state.defaultWallThickness,
+      defaultWallHeight: state.defaultWallHeight,
+      modelTheme: state.modelTheme,
+      floors: state.floors,
+      corners: state.corners,
+      walls: state.walls,
+      floorplans: floorplansPayload,
+      staircaseOpenings: state.staircaseOpenings,
+      roomComponents: Object.values(state.rooms).flatMap((room) => {
+        const roomKey = [...room.cornerIds].sort().join(",");
+        return room.components.map((comp) => ({
+          roomKey,
+          floorId: room.floorId,
+          component: { id: comp.id, type: comp.type, label: comp.label, x: comp.x, y: comp.y, meta: comp.meta, haEntityId: comp.haEntityId },
+        }));
+      }),
+      roomNames: Object.values(state.rooms)
+        .filter((room) => room.name && room.name !== "Room")
+        .map((room) => ({
+          floorId: room.floorId,
+          roomKey: [...room.cornerIds].sort().join(","),
+          name: room.name,
+        })),
+    };
+
+    const safeName = (state.currentPlanName || "floorplan").replace(/[^a-z0-9_\-. ]/gi, "_");
+    const blob = new Blob([JSON.stringify(exportData)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${safeName}.fpjson`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // ── Import ───────────────────────────────────────────────────────────────────
+
+  const handleImportClick = useCallback(() => {
+    importFileInputRef.current?.click();
+  }, []);
+
+  const handleImportFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = "";
+
+      let text: string;
+      try {
+        text = await file.text();
+      } catch {
+        setImportError("Could not read file");
+        return;
+      }
+
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setImportError("Invalid .fpjson file (not valid JSON)");
+        return;
+      }
+
+      if (!data.name || !data.floors || !data.corners || !data.walls) {
+        setImportError("Invalid .fpjson file: missing required fields");
+        return;
+      }
+
+      // Show dialog so user can rename or choose to replace current plan
+      setImportError(null);
+      setImportDialogName((data.name as string) || "Untitled Plan");
+      setImportDialogData(text);
+      setShowImportDialog(true);
+    },
+    [],
+  );
+
+  const handleImportConfirm = useCallback(
+    async (replaceId?: string) => {
+      if (!importDialogData) return;
+      setImporting(true);
+      try {
+        const payload = {
+          ...JSON.parse(importDialogData),
+          importName: importDialogName.trim() || "Untitled Plan",
+          ...(replaceId ? { replaceId } : {}),
+        };
+        const res = await fetch("/api/plans/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          setImportError((err as { error?: string }).error || "Import failed");
+          return;
+        }
+        const result = await res.json();
+        setShowImportDialog(false);
+        setImportDialogData(null);
+        await loadPlan(result.id);
+      } catch {
+        setImportError("Import failed");
+      } finally {
+        setImporting(false);
+      }
+    },
+    [importDialogData, importDialogName, loadPlan],
+  );
+
   const handleSaveDialogConfirm = useCallback(() => {
     const name = saveNameValue.trim() || "Untitled Plan";
     setCurrentPlanName(name);
@@ -213,24 +356,32 @@ export function Toolbar() {
       if (e.key === "Escape") {
         if (showLoadDialog) setShowLoadDialog(false);
         if (showSaveDialog) setShowSaveDialog(false);
+        if (showImportDialog) setShowImportDialog(false);
       }
     };
-    if (showLoadDialog || showSaveDialog) {
+    if (showLoadDialog || showSaveDialog || showImportDialog) {
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
     }
-  }, [showLoadDialog, showSaveDialog]);
+  }, [showLoadDialog, showSaveDialog, showImportDialog]);
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
       {/* Theme toggle (floating, top-right corner area) */}
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         className="hidden"
         onChange={handleFileChange}
+      />
+      <input
+        ref={importFileInputRef}
+        type="file"
+        accept=".fpjson"
+        className="hidden"
+        onChange={handleImportFileChange}
       />
 
       {/* Top bar */}
@@ -402,6 +553,16 @@ export function Toolbar() {
                   />
                 </svg>
               )}
+            </ToolButton>
+            <ToolButton active={false} onClick={handleExport} title="Export Plan (.fpjson)">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </ToolButton>
+            <ToolButton active={false} onClick={handleImportClick} title="Import Plan (.fpjson)">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
+              </svg>
             </ToolButton>
           </div>
 
@@ -989,6 +1150,65 @@ export function Toolbar() {
                     </button>
                   </div>
                 ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Import dialog ─────────────────────────────────────────────── */}
+      {showImportDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/50 backdrop-blur-sm pointer-events-auto"
+          onClick={() => setShowImportDialog(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-300/50 dark:border-gray-700/50 w-full max-w-sm mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-gray-200/50 dark:border-gray-700/50">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Import Plan</h2>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1.5">
+                  Plan Name
+                </label>
+                <input
+                  type="text"
+                  value={importDialogName}
+                  onChange={(e) => setImportDialogName(e.target.value)}
+                  placeholder="Untitled Plan"
+                  autoFocus
+                  className="w-full bg-gray-100/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none transition-colors"
+                />
+              </div>
+              {importError && (
+                <p className="text-xs text-red-500 dark:text-red-400">{importError}</p>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-200/50 dark:border-gray-700/50 flex-wrap">
+              <button
+                onClick={() => setShowImportDialog(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-md transition-all"
+              >
+                Cancel
+              </button>
+              {currentPlanId && (
+                <button
+                  onClick={() => handleImportConfirm(currentPlanId)}
+                  disabled={importing}
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-400 disabled:opacity-50 rounded-md shadow transition-all"
+                >
+                  Replace Current Plan
+                </button>
+              )}
+              <button
+                onClick={() => handleImportConfirm()}
+                disabled={importing}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-md shadow transition-all"
+              >
+                Import as New Plan
+              </button>
             </div>
           </div>
         </div>
