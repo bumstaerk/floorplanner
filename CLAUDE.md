@@ -67,3 +67,16 @@ Interactive 3D floorplan editor: load an image, draw walls over it in 2D, previe
 - `@types/three` must be in devDependencies for typecheck to pass.
 - Client chunk is ~900KB minified. Consider `manualChunks` in Vite config if bundle size matters.
 - Walls with `visible: false` still act as room dividers in the detection graph.
+
+### Demo Template Maintenance
+
+The demo house template (`public/templates/demo-house.fpjson`) must be kept in sync with schema changes. When the `.fpjson` format changes (new fields, renamed fields, structural changes):
+
+1. Load the existing template via Import
+2. Verify it still works correctly after the schema change
+3. If needed, make adjustments in the editor
+4. Export to `public/templates/demo-house.fpjson`
+5. Update `docker/homeassistant/configuration.yaml` if HA entity IDs changed
+6. Commit both files together
+
+The template includes HA entity bindings that match `docker/homeassistant/configuration.yaml` — keep them aligned.

@@ -62,6 +62,7 @@ export function Toolbar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importFileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [loadingDemo, setLoadingDemo] = useState(false);
 
   // ── Import dialog state ─────────────────────────────────────────────────────
 
@@ -287,6 +288,43 @@ export function Toolbar() {
     savePlan(name);
     setShowSaveDialog(false);
   }, [saveNameValue, setCurrentPlanName, savePlan]);
+
+  // ── Load Demo Template ──────────────────────────────────────────────────────
+
+  const handleLoadDemo = useCallback(async () => {
+    setLoadingDemo(true);
+    setImportError(null);
+    try {
+      // Fetch the demo template from public/templates
+      const res = await fetch("/templates/demo-house.fpjson");
+      if (!res.ok) {
+        setImportError("Failed to fetch demo template");
+        return;
+      }
+      const data = await res.json();
+
+      // Import via the API to create a new plan
+      const importRes = await fetch("/api/plans/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          importName: "Demo House",
+        }),
+      });
+      if (!importRes.ok) {
+        const err = await importRes.json().catch(() => ({}));
+        setImportError((err as { error?: string }).error || "Import failed");
+        return;
+      }
+      const result = await importRes.json();
+      await loadPlan(result.id);
+    } catch {
+      setImportError("Failed to load demo template");
+    } finally {
+      setLoadingDemo(false);
+    }
+  }, [loadPlan]);
 
   // ── Floorplan upload ────────────────────────────────────────────────────────
 
@@ -563,6 +601,18 @@ export function Toolbar() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12" />
               </svg>
+            </ToolButton>
+            <ToolButton active={false} onClick={handleLoadDemo} title="Load Demo House" disabled={loadingDemo}>
+              {loadingDemo ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              )}
             </ToolButton>
           </div>
 

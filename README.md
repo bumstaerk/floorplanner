@@ -31,6 +31,40 @@ pnpm dev
 
 The app will be available at `http://localhost:5173`.
 
+## Try the Demo
+
+A demo house template and Home Assistant docker setup are included for quickly exploring all features.
+
+### Quick Start
+
+1. **Start the demo Home Assistant instance:**
+
+   ```bash
+   cd docker
+   docker-compose up -d
+   ```
+
+2. **Start the floorplanner:**
+
+   ```bash
+   pnpm dev
+   ```
+
+3. **Import the demo template:**
+
+   - Open http://localhost:5173
+   - Click **Import** in the toolbar
+   - Select `public/templates/demo-house.fpjson`
+
+4. **Connect to Home Assistant** (optional):
+
+   - In the right panel, expand **Home Assistant**
+   - Enter Host: `http://localhost:8123`
+   - Create a token in HA (Profile → Security → Long-Lived Access Tokens)
+   - Paste the token and click **Save & Connect**
+
+The demo house includes two floors with rooms, doors, windows, and components pre-bound to demo HA entities. See [`docker/README.md`](docker/README.md) for detailed setup instructions.
+
 ### Database
 
 Push the schema to a local SQLite database:
