@@ -1,0 +1,509 @@
+{
+  "formatVersion": 1,
+  "name": "Demo House",
+  "defaultWallThickness": 0.2,
+  "defaultWallHeight": 2.5,
+  "modelTheme": {
+    "wallColor": "#e8e0d5",
+    "roomFloorColor": "#d8cfc2",
+    "groundColor": "#c8bfb0",
+    "floorPlateColor": "#d0c8ba",
+    "glassColor": "#c8e6ff",
+    "windowFrameColor": "#8a8a8a",
+    "doorFrameColor": "#a0896a",
+    "backgroundColor": "#d8d2c8"
+  },
+  "floors": [
+    {
+      "id": "floor-ground",
+      "name": "Ground Floor",
+      "level": 0,
+      "floorHeight": 2.8
+    },
+    {
+      "id": "floor-first",
+      "name": "First Floor",
+      "level": 1,
+      "floorHeight": 2.8
+    }
+  ],
+  "corners": {
+    "g-c1": { "id": "g-c1", "floorId": "floor-ground", "position": { "x": 0, "y": 0 } },
+    "g-c2": { "id": "g-c2", "floorId": "floor-ground", "position": { "x": 5, "y": 0 } },
+    "g-c3": { "id": "g-c3", "floorId": "floor-ground", "position": { "x": 8, "y": 0 } },
+    "g-c4": { "id": "g-c4", "floorId": "floor-ground", "position": { "x": 12, "y": 0 } },
+    "g-c5": { "id": "g-c5", "floorId": "floor-ground", "position": { "x": 0, "y": 4 } },
+    "g-c6": { "id": "g-c6", "floorId": "floor-ground", "position": { "x": 3, "y": 4 } },
+    "g-c7": { "id": "g-c7", "floorId": "floor-ground", "position": { "x": 5, "y": 4 } },
+    "g-c8": { "id": "g-c8", "floorId": "floor-ground", "position": { "x": 8, "y": 4 } },
+    "g-c9": { "id": "g-c9", "floorId": "floor-ground", "position": { "x": 12, "y": 4 } },
+    "g-c10": { "id": "g-c10", "floorId": "floor-ground", "position": { "x": 0, "y": 7 } },
+    "g-c11": { "id": "g-c11", "floorId": "floor-ground", "position": { "x": 3, "y": 7 } },
+    "g-c12": { "id": "g-c12", "floorId": "floor-ground", "position": { "x": 5, "y": 7 } },
+    "g-c13": { "id": "g-c13", "floorId": "floor-ground", "position": { "x": 8, "y": 7 } },
+    "g-c14": { "id": "g-c14", "floorId": "floor-ground", "position": { "x": 12, "y": 7 } },
+    "g-c15": { "id": "g-c15", "floorId": "floor-ground", "position": { "x": 0, "y": 10 } },
+    "g-c16": { "id": "g-c16", "floorId": "floor-ground", "position": { "x": 5, "y": 10 } },
+    "g-c17": { "id": "g-c17", "floorId": "floor-ground", "position": { "x": 8, "y": 10 } },
+    "g-c18": { "id": "g-c18", "floorId": "floor-ground", "position": { "x": 12, "y": 10 } },
+
+    "f-c1": { "id": "f-c1", "floorId": "floor-first", "position": { "x": 0, "y": 0 } },
+    "f-c2": { "id": "f-c2", "floorId": "floor-first", "position": { "x": 6, "y": 0 } },
+    "f-c3": { "id": "f-c3", "floorId": "floor-first", "position": { "x": 12, "y": 0 } },
+    "f-c4": { "id": "f-c4", "floorId": "floor-first", "position": { "x": 0, "y": 5 } },
+    "f-c5": { "id": "f-c5", "floorId": "floor-first", "position": { "x": 4, "y": 5 } },
+    "f-c6": { "id": "f-c6", "floorId": "floor-first", "position": { "x": 6, "y": 5 } },
+    "f-c7": { "id": "f-c7", "floorId": "floor-first", "position": { "x": 8, "y": 5 } },
+    "f-c8": { "id": "f-c8", "floorId": "floor-first", "position": { "x": 12, "y": 5 } },
+    "f-c9": { "id": "f-c9", "floorId": "floor-first", "position": { "x": 0, "y": 7 } },
+    "f-c10": { "id": "f-c10", "floorId": "floor-first", "position": { "x": 4, "y": 7 } },
+    "f-c11": { "id": "f-c11", "floorId": "floor-first", "position": { "x": 8, "y": 7 } },
+    "f-c12": { "id": "f-c12", "floorId": "floor-first", "position": { "x": 0, "y": 10 } },
+    "f-c13": { "id": "f-c13", "floorId": "floor-first", "position": { "x": 6, "y": 10 } },
+    "f-c14": { "id": "f-c14", "floorId": "floor-first", "position": { "x": 8, "y": 10 } },
+    "f-c15": { "id": "f-c15", "floorId": "floor-first", "position": { "x": 12, "y": 10 } }
+  },
+  "walls": {
+    "g-w1": {
+      "id": "g-w1", "floorId": "floor-ground", "startId": "g-c1", "endId": "g-c2",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win1", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "g-w2": {
+      "id": "g-w2", "floorId": "floor-ground", "startId": "g-c2", "endId": "g-c3",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door-entry", "type": "door", "offset": 0.5, "width": 1.0, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": []
+    },
+    "g-w3": {
+      "id": "g-w3", "floorId": "floor-ground", "startId": "g-c3", "endId": "g-c4",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win2", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "g-w4": {
+      "id": "g-w4", "floorId": "floor-ground", "startId": "g-c4", "endId": "g-c9",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win3", "type": "window", "offset": 1.5, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "g-w5": {
+      "id": "g-w5", "floorId": "floor-ground", "startId": "g-c9", "endId": "g-c14",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win4", "type": "window", "offset": 1.0, "width": 1.0, "height": 1.0, "elevation": 1.0, "face": "right" }
+      ],
+      "components": []
+    },
+    "g-w6": {
+      "id": "g-w6", "floorId": "floor-ground", "startId": "g-c14", "endId": "g-c18",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win5", "type": "window", "offset": 1.0, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "g-w7": {
+      "id": "g-w7", "floorId": "floor-ground", "startId": "g-c18", "endId": "g-c17",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w8": {
+      "id": "g-w8", "floorId": "floor-ground", "startId": "g-c17", "endId": "g-c16",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win6", "type": "window", "offset": 1.0, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "g-w9": {
+      "id": "g-w9", "floorId": "floor-ground", "startId": "g-c16", "endId": "g-c15",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door-back", "type": "door", "offset": 1.5, "width": 0.9, "height": 2.1, "elevation": 0, "face": "right", "hinge": "end" }
+      ],
+      "components": []
+    },
+    "g-w10": {
+      "id": "g-w10", "floorId": "floor-ground", "startId": "g-c15", "endId": "g-c10",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win7", "type": "window", "offset": 1.0, "width": 1.0, "height": 1.0, "elevation": 1.0, "face": "left" }
+      ],
+      "components": []
+    },
+    "g-w11": {
+      "id": "g-w11", "floorId": "floor-ground", "startId": "g-c10", "endId": "g-c5",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win8", "type": "window", "offset": 1.2, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "g-w12": {
+      "id": "g-w12", "floorId": "floor-ground", "startId": "g-c5", "endId": "g-c1",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-win9", "type": "window", "offset": 1.2, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+
+    "g-w13": {
+      "id": "g-w13", "floorId": "floor-ground", "startId": "g-c5", "endId": "g-c6",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door1", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw1", "type": "switch", "label": "Living Room", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.living_room" }
+      ]
+    },
+    "g-w14": {
+      "id": "g-w14", "floorId": "floor-ground", "startId": "g-c6", "endId": "g-c7",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w15": {
+      "id": "g-w15", "floorId": "floor-ground", "startId": "g-c7", "endId": "g-c2",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w16": {
+      "id": "g-w16", "floorId": "floor-ground", "startId": "g-c7", "endId": "g-c8",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door2", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw2", "type": "switch", "label": "Entry", "offset": 2.5, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "switch.entry_light" }
+      ]
+    },
+    "g-w17": {
+      "id": "g-w17", "floorId": "floor-ground", "startId": "g-c8", "endId": "g-c3",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w18": {
+      "id": "g-w18", "floorId": "floor-ground", "startId": "g-c8", "endId": "g-c9",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door3", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw3", "type": "switch", "label": "Kitchen", "offset": 0.2, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "light.kitchen" }
+      ]
+    },
+
+    "g-w19": {
+      "id": "g-w19", "floorId": "floor-ground", "startId": "g-c6", "endId": "g-c11",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w20": {
+      "id": "g-w20", "floorId": "floor-ground", "startId": "g-c10", "endId": "g-c11",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door4", "type": "door", "offset": 0.5, "width": 0.7, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw4", "type": "switch", "label": "WC", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.bathroom_ground" }
+      ]
+    },
+    "g-w21": {
+      "id": "g-w21", "floorId": "floor-ground", "startId": "g-c11", "endId": "g-c12",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door5", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": []
+    },
+    "g-w22": {
+      "id": "g-w22", "floorId": "floor-ground", "startId": "g-c7", "endId": "g-c12",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+
+    "g-w23": {
+      "id": "g-w23", "floorId": "floor-ground", "startId": "g-c12", "endId": "g-c13",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w24": {
+      "id": "g-w24", "floorId": "floor-ground", "startId": "g-c8", "endId": "g-c13",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w25": {
+      "id": "g-w25", "floorId": "floor-ground", "startId": "g-c13", "endId": "g-c14",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door6", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw5", "type": "switch", "label": "Dining", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.dining_room" }
+      ]
+    },
+
+    "g-w26": {
+      "id": "g-w26", "floorId": "floor-ground", "startId": "g-c12", "endId": "g-c16",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "g-w27": {
+      "id": "g-w27", "floorId": "floor-ground", "startId": "g-c13", "endId": "g-c17",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "g-door7", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "g-sw6", "type": "switch", "label": "Utility", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.utility" },
+        { "id": "g-out1", "type": "outlet", "label": "Utility Outlet", "offset": 1.5, "elevation": 0.3, "face": "right", "meta": null, "haEntityId": "switch.utility_outlet" }
+      ]
+    },
+
+    "f-w1": {
+      "id": "f-w1", "floorId": "floor-first", "startId": "f-c1", "endId": "f-c2",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win1", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" },
+        { "id": "f-win2", "type": "window", "offset": 4.0, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "f-w2": {
+      "id": "f-w2", "floorId": "floor-first", "startId": "f-c2", "endId": "f-c3",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win3", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" },
+        { "id": "f-win4", "type": "window", "offset": 4.0, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "f-w3": {
+      "id": "f-w3", "floorId": "floor-first", "startId": "f-c3", "endId": "f-c8",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win5", "type": "window", "offset": 1.5, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "f-w4": {
+      "id": "f-w4", "floorId": "floor-first", "startId": "f-c8", "endId": "f-c15",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win6", "type": "window", "offset": 1.5, "width": 1.2, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "f-w5": {
+      "id": "f-w5", "floorId": "floor-first", "startId": "f-c15", "endId": "f-c14",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w6": {
+      "id": "f-w6", "floorId": "floor-first", "startId": "f-c14", "endId": "f-c13",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w7": {
+      "id": "f-w7", "floorId": "floor-first", "startId": "f-c13", "endId": "f-c12",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win7", "type": "window", "offset": 2.0, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "right" }
+      ],
+      "components": []
+    },
+    "f-w8": {
+      "id": "f-w8", "floorId": "floor-first", "startId": "f-c12", "endId": "f-c9",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win8", "type": "window", "offset": 1.0, "width": 1.0, "height": 1.0, "elevation": 1.0, "face": "left" }
+      ],
+      "components": []
+    },
+    "f-w9": {
+      "id": "f-w9", "floorId": "floor-first", "startId": "f-c9", "endId": "f-c4",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win9", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+    "f-w10": {
+      "id": "f-w10", "floorId": "floor-first", "startId": "f-c4", "endId": "f-c1",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-win10", "type": "window", "offset": 1.5, "width": 1.5, "height": 1.2, "elevation": 0.9, "face": "left" }
+      ],
+      "components": []
+    },
+
+    "f-w11": {
+      "id": "f-w11", "floorId": "floor-first", "startId": "f-c4", "endId": "f-c5",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-door1", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "f-sw1", "type": "switch", "label": "Master Bedroom", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.master_bedroom" }
+      ]
+    },
+    "f-w12": {
+      "id": "f-w12", "floorId": "floor-first", "startId": "f-c5", "endId": "f-c6",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w13": {
+      "id": "f-w13", "floorId": "floor-first", "startId": "f-c6", "endId": "f-c2",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w14": {
+      "id": "f-w14", "floorId": "floor-first", "startId": "f-c6", "endId": "f-c7",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-door2", "type": "door", "offset": 0.3, "width": 0.8, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "f-sw2", "type": "switch", "label": "Bedroom 2", "offset": 1.5, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "light.bedroom_2" }
+      ]
+    },
+    "f-w15": {
+      "id": "f-w15", "floorId": "floor-first", "startId": "f-c7", "endId": "f-c8",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-door3", "type": "door", "offset": 0.5, "width": 0.8, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "f-sw3", "type": "switch", "label": "Bedroom 3", "offset": 0.2, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "light.bedroom_3" }
+      ]
+    },
+
+    "f-w16": {
+      "id": "f-w16", "floorId": "floor-first", "startId": "f-c5", "endId": "f-c10",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-door4", "type": "door", "offset": 0.3, "width": 0.7, "height": 2.1, "elevation": 0, "face": "right", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "f-sw4", "type": "switch", "label": "En-suite", "offset": 0.2, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "light.master_bathroom" }
+      ]
+    },
+    "f-w17": {
+      "id": "f-w17", "floorId": "floor-first", "startId": "f-c9", "endId": "f-c10",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w18": {
+      "id": "f-w18", "floorId": "floor-first", "startId": "f-c10", "endId": "f-c11",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    },
+    "f-w19": {
+      "id": "f-w19", "floorId": "floor-first", "startId": "f-c6", "endId": "f-c13",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": [
+        { "id": "f-sw5", "type": "switch", "label": "Hallway", "offset": 0.2, "elevation": 1.1, "face": "left", "meta": null, "haEntityId": "light.hallway_first" }
+      ]
+    },
+
+    "f-w20": {
+      "id": "f-w20", "floorId": "floor-first", "startId": "f-c11", "endId": "f-c14",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [
+        { "id": "f-door5", "type": "door", "offset": 0.5, "width": 0.7, "height": 2.1, "elevation": 0, "face": "left", "hinge": "start" }
+      ],
+      "components": [
+        { "id": "f-sw6", "type": "switch", "label": "Bathroom", "offset": 0.2, "elevation": 1.1, "face": "right", "meta": null, "haEntityId": "light.bathroom_first" }
+      ]
+    },
+    "f-w21": {
+      "id": "f-w21", "floorId": "floor-first", "startId": "f-c7", "endId": "f-c11",
+      "thickness": null, "height": null, "visible": true,
+      "openings": [],
+      "components": []
+    }
+  },
+  "staircaseOpenings": {
+    "stair-g": {
+      "id": "stair-g",
+      "floorId": "floor-ground",
+      "position": { "x": 6.5, "y": 5.5 },
+      "width": 1.0,
+      "depth": 2.5,
+      "rotation": 0
+    },
+    "stair-f": {
+      "id": "stair-f",
+      "floorId": "floor-first",
+      "position": { "x": 6.5, "y": 5.5 },
+      "width": 1.0,
+      "depth": 2.5,
+      "rotation": 0
+    }
+  },
+  "floorplans": [],
+  "roomNames": [
+    { "floorId": "floor-ground", "roomKey": "g-c1,g-c2,g-c5,g-c6,g-c7", "name": "Living Room" },
+    { "floorId": "floor-ground", "roomKey": "g-c2,g-c3,g-c7,g-c8", "name": "Entry" },
+    { "floorId": "floor-ground", "roomKey": "g-c3,g-c4,g-c8,g-c9", "name": "Kitchen" },
+    { "floorId": "floor-ground", "roomKey": "g-c5,g-c6,g-c10,g-c11", "name": "WC" },
+    { "floorId": "floor-ground", "roomKey": "g-c6,g-c7,g-c11,g-c12", "name": "Hallway" },
+    { "floorId": "floor-ground", "roomKey": "g-c8,g-c9,g-c13,g-c14", "name": "Dining Room" },
+    { "floorId": "floor-ground", "roomKey": "g-c10,g-c11,g-c15,g-c16", "name": "Rear Hallway" },
+    { "floorId": "floor-ground", "roomKey": "g-c12,g-c13,g-c16,g-c17", "name": "Storage" },
+    { "floorId": "floor-ground", "roomKey": "g-c13,g-c14,g-c17,g-c18", "name": "Utility" },
+    { "floorId": "floor-first", "roomKey": "f-c1,f-c2,f-c4,f-c5,f-c6", "name": "Master Bedroom" },
+    { "floorId": "floor-first", "roomKey": "f-c2,f-c3,f-c6,f-c7,f-c8", "name": "Bedroom 2" },
+    { "floorId": "floor-first", "roomKey": "f-c4,f-c5,f-c9,f-c10", "name": "En-suite" },
+    { "floorId": "floor-first", "roomKey": "f-c5,f-c6,f-c10,f-c11,f-c13", "name": "Landing" },
+    { "floorId": "floor-first", "roomKey": "f-c7,f-c8,f-c11,f-c14,f-c15", "name": "Bedroom 3" },
+    { "floorId": "floor-first", "roomKey": "f-c9,f-c10,f-c12,f-c13", "name": "Master Bath Annex" },
+    { "floorId": "floor-first", "roomKey": "f-c11,f-c13,f-c14", "name": "Bathroom" }
+  ],
+  "roomComponents": [
+    { "floorId": "floor-ground", "roomKey": "g-c1,g-c2,g-c5,g-c6,g-c7", "id": "rc-g1", "type": "light", "label": "Living Room Ceiling Light", "x": 2.5, "y": 2, "meta": { "lightState": { "on": true, "brightness": 80, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.living_room" },
+    { "floorId": "floor-ground", "roomKey": "g-c3,g-c4,g-c8,g-c9", "id": "rc-g2", "type": "light", "label": "Kitchen Ceiling Light", "x": 10, "y": 2, "meta": { "lightState": { "on": true, "brightness": 100, "colorMode": "warmth", "colorTemp": 4000, "rgb": "#ffffff" } }, "haEntityId": "light.kitchen" },
+    { "floorId": "floor-ground", "roomKey": "g-c2,g-c3,g-c7,g-c8", "id": "rc-g3", "type": "light", "label": "Entry Light", "x": 6.5, "y": 2, "meta": { "lightState": { "on": true, "brightness": 70, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.entry" },
+    { "floorId": "floor-ground", "roomKey": "g-c6,g-c7,g-c11,g-c12", "id": "rc-g4", "type": "light", "label": "Hallway Light", "x": 4, "y": 5.5, "meta": { "lightState": { "on": true, "brightness": 60, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.hallway_ground" },
+    { "floorId": "floor-ground", "roomKey": "g-c6,g-c7,g-c11,g-c12", "id": "rc-g5", "type": "sensor", "label": "Hallway Smoke Detector", "x": 4, "y": 6, "meta": null, "haEntityId": "binary_sensor.smoke_hallway_ground" },
+    { "floorId": "floor-ground", "roomKey": "g-c2,g-c3,g-c7,g-c8", "id": "rc-g6", "type": "sensor", "label": "Entry Motion Sensor", "x": 6.5, "y": 3, "meta": null, "haEntityId": "binary_sensor.entry_motion" },
+    { "floorId": "floor-ground", "roomKey": "g-c5,g-c6,g-c10,g-c11", "id": "rc-g7", "type": "light", "label": "WC Light", "x": 1.5, "y": 5.5, "meta": { "lightState": { "on": false, "brightness": 100, "colorMode": "warmth", "colorTemp": 4000, "rgb": "#ffffff" } }, "haEntityId": "light.bathroom_ground" },
+    { "floorId": "floor-ground", "roomKey": "g-c8,g-c9,g-c13,g-c14", "id": "rc-g8", "type": "light", "label": "Dining Room Light", "x": 10, "y": 5.5, "meta": { "lightState": { "on": false, "brightness": 80, "colorMode": "warmth", "colorTemp": 2700, "rgb": "#ffddbb" } }, "haEntityId": "light.dining_room" },
+    { "floorId": "floor-ground", "roomKey": "g-c13,g-c14,g-c17,g-c18", "id": "rc-g9", "type": "light", "label": "Utility Light", "x": 10, "y": 8.5, "meta": { "lightState": { "on": false, "brightness": 100, "colorMode": "warmth", "colorTemp": 5000, "rgb": "#ffffff" } }, "haEntityId": "light.utility" },
+
+    { "floorId": "floor-first", "roomKey": "f-c1,f-c2,f-c4,f-c5,f-c6", "id": "rc-f1", "type": "light", "label": "Master Bedroom Light", "x": 3, "y": 2.5, "meta": { "lightState": { "on": false, "brightness": 50, "colorMode": "warmth", "colorTemp": 2700, "rgb": "#ffddbb" } }, "haEntityId": "light.master_bedroom" },
+    { "floorId": "floor-first", "roomKey": "f-c2,f-c3,f-c6,f-c7,f-c8", "id": "rc-f2", "type": "light", "label": "Bedroom 2 Light", "x": 9, "y": 2.5, "meta": { "lightState": { "on": false, "brightness": 80, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.bedroom_2" },
+    { "floorId": "floor-first", "roomKey": "f-c4,f-c5,f-c9,f-c10", "id": "rc-f3", "type": "light", "label": "En-suite Light", "x": 2, "y": 6, "meta": { "lightState": { "on": false, "brightness": 100, "colorMode": "warmth", "colorTemp": 4000, "rgb": "#ffffff" } }, "haEntityId": "light.master_bathroom" },
+    { "floorId": "floor-first", "roomKey": "f-c5,f-c6,f-c10,f-c11,f-c13", "id": "rc-f4", "type": "light", "label": "Landing Light", "x": 6, "y": 7.5, "meta": { "lightState": { "on": true, "brightness": 60, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.hallway_first" },
+    { "floorId": "floor-first", "roomKey": "f-c5,f-c6,f-c10,f-c11,f-c13", "id": "rc-f5", "type": "sensor", "label": "Landing Smoke Detector", "x": 6, "y": 8, "meta": null, "haEntityId": "binary_sensor.smoke_hallway_first" },
+    { "floorId": "floor-first", "roomKey": "f-c7,f-c8,f-c11,f-c14,f-c15", "id": "rc-f6", "type": "light", "label": "Bedroom 3 Light", "x": 10, "y": 7.5, "meta": { "lightState": { "on": false, "brightness": 80, "colorMode": "warmth", "colorTemp": 3000, "rgb": "#ffeedd" } }, "haEntityId": "light.bedroom_3" },
+    { "floorId": "floor-first", "roomKey": "f-c11,f-c13,f-c14", "id": "rc-f7", "type": "light", "label": "Bathroom Light", "x": 7, "y": 8.5, "meta": { "lightState": { "on": false, "brightness": 100, "colorMode": "warmth", "colorTemp": 4000, "rgb": "#ffffff" } }, "haEntityId": "light.bathroom_first" }
+  ]
+}

@@ -1,0 +1,590 @@
+# Home Assistant Demo Configuration for Floorplanner
+# This configuration provides demo entities matching the demo-house template
+
+homeassistant:
+  name: Floorplanner Demo
+  unit_system: metric
+  currency: EUR
+  country: DK
+  time_zone: Europe/Copenhagen
+  internal_url: http://localhost:8123
+  external_url: http://localhost:8123
+
+# Enable default integrations
+default_config:
+
+# Enable API access without authentication for demo purposes
+api:
+
+# HTTP configuration with permissive CORS for local development
+http:
+  cors_allowed_origins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+    - http://localhost:3000
+  use_x_forwarded_for: false
+
+# Logger for debugging
+logger:
+  default: info
+
+# ============================================================================
+# INPUT HELPERS - Backend state for demo entities
+# ============================================================================
+
+input_boolean:
+  # Ground Floor Lights
+  living_room_light:
+    name: Living Room Light State
+    initial: true
+  kitchen_light:
+    name: Kitchen Light State
+    initial: true
+  dining_room_light:
+    name: Dining Room Light State
+    initial: false
+  entry_light:
+    name: Entry Light State
+    initial: true
+  hallway_ground_light:
+    name: Ground Floor Hallway Light State
+    initial: true
+  bathroom_ground_light:
+    name: Ground Floor Bathroom Light State
+    initial: false
+  utility_light:
+    name: Utility Room Light State
+    initial: false
+
+  # First Floor Lights
+  master_bedroom_light:
+    name: Master Bedroom Light State
+    initial: false
+  master_bathroom_light:
+    name: Master Bathroom Light State
+    initial: false
+  bedroom_2_light:
+    name: Bedroom 2 Light State
+    initial: false
+  bedroom_3_light:
+    name: Bedroom 3 Light State
+    initial: false
+  hallway_first_light:
+    name: First Floor Hallway Light State
+    initial: true
+  bathroom_first_light:
+    name: First Floor Bathroom Light State
+    initial: false
+
+  # Switches
+  entry_switch:
+    name: Entry Switch State
+    initial: true
+  kitchen_outlet:
+    name: Kitchen Outlet State
+    initial: true
+  utility_outlet:
+    name: Utility Outlet State
+    initial: false
+
+  # Binary Sensors (motion, smoke)
+  entry_motion_detected:
+    name: Entry Motion Detected
+    initial: false
+  hallway_motion_detected:
+    name: Hallway Motion Detected
+    initial: false
+  smoke_hallway_ground_detected:
+    name: Ground Hallway Smoke Detected
+    initial: false
+  smoke_hallway_first_detected:
+    name: First Hallway Smoke Detected
+    initial: false
+
+  # Covers
+  living_room_blinds_open:
+    name: Living Room Blinds Open
+    initial: true
+  master_bedroom_blinds_open:
+    name: Master Bedroom Blinds Open
+    initial: false
+
+  # Media
+  living_room_tv_on:
+    name: Living Room TV On
+    initial: false
+
+  # Climate
+  living_room_hvac_on:
+    name: Living Room HVAC On
+    initial: true
+  master_bedroom_hvac_on:
+    name: Master Bedroom HVAC On
+    initial: false
+
+input_number:
+  # Light brightness levels (0-100)
+  living_room_brightness:
+    name: Living Room Brightness
+    min: 0
+    max: 100
+    step: 1
+    initial: 80
+  kitchen_brightness:
+    name: Kitchen Brightness
+    min: 0
+    max: 100
+    step: 1
+    initial: 100
+  master_bedroom_brightness:
+    name: Master Bedroom Brightness
+    min: 0
+    max: 100
+    step: 1
+    initial: 50
+
+  # Climate temperatures
+  living_room_temperature:
+    name: Living Room Temperature
+    min: 16
+    max: 28
+    step: 0.5
+    initial: 21
+    unit_of_measurement: "°C"
+  living_room_target_temp:
+    name: Living Room Target Temperature
+    min: 16
+    max: 28
+    step: 0.5
+    initial: 22
+    unit_of_measurement: "°C"
+  master_bedroom_temperature:
+    name: Master Bedroom Temperature
+    min: 16
+    max: 28
+    step: 0.5
+    initial: 19
+    unit_of_measurement: "°C"
+  master_bedroom_target_temp:
+    name: Master Bedroom Target Temperature
+    min: 16
+    max: 28
+    step: 0.5
+    initial: 20
+    unit_of_measurement: "°C"
+
+  # Cover position (0-100)
+  living_room_blinds_position:
+    name: Living Room Blinds Position
+    min: 0
+    max: 100
+    step: 1
+    initial: 100
+  master_bedroom_blinds_position:
+    name: Master Bedroom Blinds Position
+    min: 0
+    max: 100
+    step: 1
+    initial: 0
+
+# ============================================================================
+# TEMPLATE LIGHTS
+# ============================================================================
+
+light:
+  # Ground Floor
+  - platform: template
+    lights:
+      living_room:
+        friendly_name: "Living Room Light"
+        value_template: "{{ is_state('input_boolean.living_room_light', 'on') }}"
+        level_template: "{{ states('input_number.living_room_brightness') | int * 2.55 }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.living_room_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.living_room_light
+        set_level:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.living_room_brightness
+            data:
+              value: "{{ (brightness / 2.55) | int }}"
+
+      kitchen:
+        friendly_name: "Kitchen Light"
+        value_template: "{{ is_state('input_boolean.kitchen_light', 'on') }}"
+        level_template: "{{ states('input_number.kitchen_brightness') | int * 2.55 }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.kitchen_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.kitchen_light
+        set_level:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.kitchen_brightness
+            data:
+              value: "{{ (brightness / 2.55) | int }}"
+
+      dining_room:
+        friendly_name: "Dining Room Light"
+        value_template: "{{ is_state('input_boolean.dining_room_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.dining_room_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.dining_room_light
+
+      entry:
+        friendly_name: "Entry Light"
+        value_template: "{{ is_state('input_boolean.entry_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.entry_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.entry_light
+
+      hallway_ground:
+        friendly_name: "Ground Floor Hallway Light"
+        value_template: "{{ is_state('input_boolean.hallway_ground_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.hallway_ground_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.hallway_ground_light
+
+      bathroom_ground:
+        friendly_name: "Ground Floor Bathroom Light"
+        value_template: "{{ is_state('input_boolean.bathroom_ground_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.bathroom_ground_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.bathroom_ground_light
+
+      utility:
+        friendly_name: "Utility Room Light"
+        value_template: "{{ is_state('input_boolean.utility_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.utility_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.utility_light
+
+  # First Floor
+  - platform: template
+    lights:
+      master_bedroom:
+        friendly_name: "Master Bedroom Light"
+        value_template: "{{ is_state('input_boolean.master_bedroom_light', 'on') }}"
+        level_template: "{{ states('input_number.master_bedroom_brightness') | int * 2.55 }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.master_bedroom_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.master_bedroom_light
+        set_level:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.master_bedroom_brightness
+            data:
+              value: "{{ (brightness / 2.55) | int }}"
+
+      master_bathroom:
+        friendly_name: "Master Bathroom Light"
+        value_template: "{{ is_state('input_boolean.master_bathroom_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.master_bathroom_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.master_bathroom_light
+
+      bedroom_2:
+        friendly_name: "Bedroom 2 Light"
+        value_template: "{{ is_state('input_boolean.bedroom_2_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.bedroom_2_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.bedroom_2_light
+
+      bedroom_3:
+        friendly_name: "Bedroom 3 Light"
+        value_template: "{{ is_state('input_boolean.bedroom_3_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.bedroom_3_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.bedroom_3_light
+
+      hallway_first:
+        friendly_name: "First Floor Hallway Light"
+        value_template: "{{ is_state('input_boolean.hallway_first_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.hallway_first_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.hallway_first_light
+
+      bathroom_first:
+        friendly_name: "First Floor Bathroom Light"
+        value_template: "{{ is_state('input_boolean.bathroom_first_light', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.bathroom_first_light
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.bathroom_first_light
+
+# ============================================================================
+# TEMPLATE SWITCHES
+# ============================================================================
+
+switch:
+  - platform: template
+    switches:
+      entry_light:
+        friendly_name: "Entry Light Switch"
+        value_template: "{{ is_state('input_boolean.entry_switch', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.entry_switch
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.entry_switch
+
+      kitchen_outlet:
+        friendly_name: "Kitchen Outlet"
+        value_template: "{{ is_state('input_boolean.kitchen_outlet', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.kitchen_outlet
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.kitchen_outlet
+
+      utility_outlet:
+        friendly_name: "Utility Room Outlet"
+        value_template: "{{ is_state('input_boolean.utility_outlet', 'on') }}"
+        turn_on:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.utility_outlet
+        turn_off:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.utility_outlet
+
+# ============================================================================
+# TEMPLATE BINARY SENSORS
+# ============================================================================
+
+binary_sensor:
+  - platform: template
+    sensors:
+      entry_motion:
+        friendly_name: "Entry Motion Sensor"
+        device_class: motion
+        value_template: "{{ is_state('input_boolean.entry_motion_detected', 'on') }}"
+
+      hallway_motion:
+        friendly_name: "Hallway Motion Sensor"
+        device_class: motion
+        value_template: "{{ is_state('input_boolean.hallway_motion_detected', 'on') }}"
+
+      smoke_hallway_ground:
+        friendly_name: "Ground Floor Hallway Smoke Detector"
+        device_class: smoke
+        value_template: "{{ is_state('input_boolean.smoke_hallway_ground_detected', 'on') }}"
+
+      smoke_hallway_first:
+        friendly_name: "First Floor Hallway Smoke Detector"
+        device_class: smoke
+        value_template: "{{ is_state('input_boolean.smoke_hallway_first_detected', 'on') }}"
+
+# ============================================================================
+# TEMPLATE COVERS
+# ============================================================================
+
+cover:
+  - platform: template
+    covers:
+      living_room_blinds:
+        friendly_name: "Living Room Blinds"
+        device_class: blind
+        position_template: "{{ states('input_number.living_room_blinds_position') | int }}"
+        open_cover:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.living_room_blinds_position
+            data:
+              value: 100
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.living_room_blinds_open
+        close_cover:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.living_room_blinds_position
+            data:
+              value: 0
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.living_room_blinds_open
+        set_cover_position:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.living_room_blinds_position
+            data:
+              value: "{{ position }}"
+
+      master_bedroom_blinds:
+        friendly_name: "Master Bedroom Blinds"
+        device_class: blind
+        position_template: "{{ states('input_number.master_bedroom_blinds_position') | int }}"
+        open_cover:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.master_bedroom_blinds_position
+            data:
+              value: 100
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.master_bedroom_blinds_open
+        close_cover:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.master_bedroom_blinds_position
+            data:
+              value: 0
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.master_bedroom_blinds_open
+        set_cover_position:
+          - service: input_number.set_value
+            target:
+              entity_id: input_number.master_bedroom_blinds_position
+            data:
+              value: "{{ position }}"
+
+# ============================================================================
+# TEMPLATE CLIMATE
+# ============================================================================
+
+climate:
+  - platform: generic_thermostat
+    name: Living Room
+    heater: input_boolean.living_room_hvac_on
+    target_sensor: sensor.living_room_temperature
+    min_temp: 16
+    max_temp: 28
+    target_temp: 22
+    cold_tolerance: 0.5
+    hot_tolerance: 0.5
+    initial_hvac_mode: "heat"
+    precision: 0.5
+
+  - platform: generic_thermostat
+    name: Master Bedroom
+    heater: input_boolean.master_bedroom_hvac_on
+    target_sensor: sensor.master_bedroom_temperature
+    min_temp: 16
+    max_temp: 28
+    target_temp: 20
+    cold_tolerance: 0.5
+    hot_tolerance: 0.5
+    initial_hvac_mode: "off"
+    precision: 0.5
+
+# ============================================================================
+# TEMPLATE SENSORS (for climate)
+# ============================================================================
+
+sensor:
+  - platform: template
+    sensors:
+      living_room_temperature:
+        friendly_name: "Living Room Temperature"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        value_template: "{{ states('input_number.living_room_temperature') }}"
+
+      master_bedroom_temperature:
+        friendly_name: "Master Bedroom Temperature"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        value_template: "{{ states('input_number.master_bedroom_temperature') }}"
+
+# ============================================================================
+# MEDIA PLAYER (Demo)
+# ============================================================================
+
+media_player:
+  - platform: demo
+
+# ============================================================================
+# AUTOMATION - Simulate some activity
+# ============================================================================
+
+automation:
+  - alias: "Demo - Random Motion"
+    trigger:
+      - platform: time_pattern
+        minutes: "/5"
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ (range(1, 10) | random) > 7 }}"
+            sequence:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.entry_motion_detected
+              - delay:
+                  seconds: 30
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.entry_motion_detected

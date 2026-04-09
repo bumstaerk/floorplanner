@@ -1,0 +1,11 @@
+services:
+  homeassistant:
+    container_name: floorplanner-ha-demo
+    image: ghcr.io/home-assistant/home-assistant:2024.1
+    volumes:
+      - ./homeassistant:/config
+    ports:
+      - "8123:8123"
+    environment:
+      - TZ=Europe/Copenhagen
+    restart: unless-stopped
